@@ -32,6 +32,12 @@
 - Win32 API calls via `golang.org/x/sys/windows` LazyDLL/NewProc pattern
 - Embedded resources via `//go:embed`
 
+## UI Icons
+
+- **Never use emojis as icons** — always use inline SVG icons from Lucide (https://lucide.dev)
+- Icons in the WebView settings UI use the `.icon` CSS class with `currentColor` stroke
+- For dynamic icon updates in JavaScript, use `element.innerHTML` with SVG markup, never `element.textContent` with emoji
+
 ## Testing
 
 **Motto: so wenig Tests wie möglich, so viel wie nötig.**
