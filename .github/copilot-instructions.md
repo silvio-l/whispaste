@@ -72,3 +72,10 @@ Only write P0 and P1 tests. Skip P2.
 - Release: `.github/workflows/release.yml` (tag-triggered, version injection via ldflags, SHA256 checksums)
 - Auto-update: GitHub Releases API, disabled when running as MSIX Store package
 - MSIX packaging: `msix/AppxManifest.xml` for Microsoft Store distribution
+
+## Documentation Maintenance
+
+- **README.md must be updated** whenever features are added, changed, or removed
+- Keep the features table, settings table, project structure, and "How It Works" section in sync with the actual codebase
+- When adding new files (e.g. `postprocess.go`, `history.go`), add them to the project structure listing
+- When adding new config fields, add them to the settings table with defaults and descriptions
