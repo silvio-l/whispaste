@@ -1,4 +1,4 @@
-# Whispaste — Copilot Instructions
+# WhisPaste — Copilot Instructions
 
 ## Project Overview
 
