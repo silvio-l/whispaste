@@ -109,6 +109,13 @@ Only write P0 and P1 tests. Skip P2.
 - Auto-update: GitHub Releases API, disabled when running as MSIX Store package
 - MSIX packaging: `msix/AppxManifest.xml` for Microsoft Store distribution
 
+## Versioning
+
+- **Skill**: `.agents/skills/versioning/SKILL.md` — consult BEFORE every release tag
+- Version lives in 5 places; 3 must be manually updated before tagging (types.go, winres.json, template.html)
+- release.yml auto-handles msix manifest + ldflags injection from git tag
+- NEVER create a release tag without first updating the 3 manual version locations
+
 ## Documentation Maintenance
 
 - **README.md must be updated** whenever features are added, changed, or removed
