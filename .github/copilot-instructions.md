@@ -48,6 +48,16 @@
 - Icons in the WebView settings UI use the `.icon` CSS class with `currentColor` stroke
 - For dynamic icon updates in JavaScript, use `element.innerHTML` with SVG markup, never `element.textContent` with emoji
 
+## Design System
+
+The project has a unified design system with two surfaces:
+
+- **App UI** (WebView2): CSS Custom Properties in `ui_main/styles/00-variables.css` — Cyan/Slate token system, dark-mode-first, Segoe UI font stack
+- **Landing Page** (Astro): Tailwind `@theme` in `website/src/styles/global.css` — `--color-brand-*` variables, same Cyan/Teal palette
+
+Full reference: `.agents/skills/whispaste-design/SKILL.md` — consult before any UI work.
+Persisted design system for the website: `website/design-system/whispaste/MASTER.md`
+
 ## Testing
 
 **Motto: so wenig Tests wie möglich, so viel wie nötig.**
@@ -55,11 +65,11 @@ Goal: maximum stability gain at minimum maintenance cost. Not a goal: coverage m
 
 ### Priority tiers
 
-| Tier | Scope | Write tests? |
-|------|-------|-------------|
-| **P0** | Auth, payments, data deletion, irreversible actions | Always |
-| **P1** | Core user flows (primary happy + failure path) | Always |
-| **P2** | Edge cases, nice-to-have coverage | Skip |
+| Tier   | Scope                                               | Write tests? |
+| ------ | --------------------------------------------------- | ------------ |
+| **P0** | Auth, payments, data deletion, irreversible actions | Always       |
+| **P1** | Core user flows (primary happy + failure path)      | Always       |
+| **P2** | Edge cases, nice-to-have coverage                   | Skip         |
 
 Only write P0 and P1 tests. Skip P2.
 
