@@ -32,6 +32,16 @@
 - Win32 API calls via `golang.org/x/sys/windows` LazyDLL/NewProc pattern
 - Embedded resources via `//go:embed`
 
+## Separation of Concerns
+
+- **Prefer smaller, focused files** over large monolithic ones — each file should have a single clear responsibility
+- Separate HTML structure, CSS styling, and JavaScript logic into distinct files or scoped blocks
+- Extract reusable components rather than duplicating code across files
+- For Astro: use component files (`*.astro`) with scoped `<style>` blocks; extract shared CSS into `src/styles/`; extract shared JS into `src/scripts/`
+- For Go: maintain the existing file-per-domain pattern (audio.go, config.go, etc.)
+- For HTML (WebView): keep CSS/JS in the same file only when the file is embedded and must be self-contained (e.g., `ui_settings.html`)
+- General guideline: if a file exceeds ~300 lines, evaluate whether it can be split into focused modules
+
 ## UI Icons
 
 - **Never use emojis as icons** — always use inline SVG icons from Lucide (https://lucide.dev)
