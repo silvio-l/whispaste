@@ -14,6 +14,19 @@
 - Tests: `$env:CGO_ENABLED="1"; go test -v -count=1 ./...`
 - Requires MinGW GCC in PATH (CGO dependency)
 - Go 1.24+ required (dependency constraint)
+- **Always build the production exe** (`-H windowsgui`) after changes. Only build a debug exe additionally if needed for console output.
+
+## Debugging
+
+- **App log**: `%APPDATA%\Whispaste\whispaste.log` — always check this FIRST when investigating runtime bugs
+- Log levels: `[DBG]`, `[INF]`, `[WRN]`, `[ERR]` — search for `WRN` and `ERR` to find issues
+- Common log patterns to watch for:
+  - `Shell_NotifyIconW failed` — notification delivery failure (Win32 struct/AUMID issues)
+  - `Update check failed` — GitHub API issues (404 = wrong repo URL, rate limiting)
+  - `Transcription error` — API or offline model failures
+  - `Hotkey registration failed` — hotkey conflict with another app or stale registration
+- When adding new features, include `logDebug()` calls at decision points and `logWarn()`/`logError()` for all failure paths
+- For Win32 API calls: always log the raw errno value on failure, not just `GetLastError()` text
 
 ## Architecture
 
@@ -60,6 +73,8 @@ Persisted design system for the website: `website/design-system/whispaste/MASTER
 
 ## Testing
 
+**Full policy: `.agents/skills/testing-policy/SKILL.md`** — consult before writing or reviewing tests.
+
 **Motto: so wenig Tests wie möglich, so viel wie nötig.**
 Goal: maximum stability gain at minimum maintenance cost. Not a goal: coverage metrics, enterprise mocking patterns, exhaustive test suites.
 
@@ -73,6 +88,7 @@ Goal: maximum stability gain at minimum maintenance cost. Not a goal: coverage m
 
 Only write P0 and P1 tests. Skip P2.
 
+- **When adding new code**: write 1–2 targeted tests covering the core happy path + primary error path
 - Tests in `package main` (same package) for access to unexported functions
 - Use `httptest.NewServer` for HTTP-dependent tests
 - Use `t.TempDir()` for file isolation
