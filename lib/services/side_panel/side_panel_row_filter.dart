@@ -24,13 +24,11 @@ List<SidePanelRow> filterSidePanelRows(List<SidePanelRow> rows, String query) {
   final trimmed = query.trim();
   if (trimmed.isEmpty) return rows;
 
-  // ⚡ Bolt: Precompile case-insensitive RegExp to avoid allocating new
-  // lowercased String objects on every item in the loop.
-  // Benchmarked on 10k items * 10k iterations: ~1943ms -> ~533ms.
-  final needleRegex = RegExp(RegExp.escape(trimmed), caseSensitive: false);
+  final needle = trimmed.toLowerCase();
   return [
     for (final row in rows)
-      if (needleRegex.hasMatch(row.title) || needleRegex.hasMatch(row.subtitle))
+      if (row.title.toLowerCase().contains(needle) ||
+          row.subtitle.toLowerCase().contains(needle))
         row,
   ];
 }

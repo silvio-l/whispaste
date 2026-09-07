@@ -28,3 +28,7 @@ was already rejected, because rejected PRs never touch `dev`.
 ## 2024-05-18 - Case-insensitive string matching tests and imports
 **Learning:** In Dart/Flutter projects, relative imports spanning from `test/` into `lib/` (e.g., `import '../../../lib/...'`) explicitly violate lint rules and cause CI failures. Never modify a test file to use relative pathing to `lib/` to bypass a local package resolution error.
 **Action:** Revert test file path modifications back to `package:...` imports if local test execution requires a temporary workaround, so that the committed PR retains clean standard imports.
+
+## 2026-11-20 - RegExp case folding limits
+**Learning:** `RegExp(..., caseSensitive: false)` in Dart does not perfectly mirror `String.toLowerCase()` behavior for certain Unicode characters, such as the Turkish dotted uppercase 'İ'. When optimizing tight loops from `toLowerCase()` to a precompiled `RegExp`, ensuring Unicode correctness for characters like 'İ' may fail tests that verify the exact case-folding behavior.
+**Action:** When applying the RegExp optimization for performance, if the application has explicit tests for locale-specific casing behavior like the Turkish 'İ' (e.g. `test/services/side_panel/side_panel_row_filter_test.dart`), either avoid the optimization, or be aware it might break specific locale correctness.

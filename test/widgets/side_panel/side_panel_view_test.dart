@@ -411,6 +411,7 @@ void main() {
     });
 
     testWidgets('search match is case-insensitive', (tester) async {
+      // Note: testing standard case insensitivity
       await tester.pumpWidget(
         makeTestable(
           const WpSidePanelView(
