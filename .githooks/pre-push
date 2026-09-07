@@ -188,6 +188,78 @@ EOF
   fi
 done
 
+# ── 2b. Branch-/Worktree-Hygiene (nur dev/main dürfen existieren) ──────
+# Silvios feste Vorgabe (2026-09-07, nach einem Vorfall mit ~26 liegen
+# gebliebenen Bot-Suggestion-/PR-Inspection-Branches): sobald dev oder main
+# gepusht wird, müssen lokal UND im Remote ausschließlich dev/main
+# existieren, keine weiteren Branches, kein offener Worktree außer dem
+# Haupt-Tree. Technisch erzwungen statt nur einmalig manuell aufgeräumt —
+# ein Feature-Worktree/-Branch muss vor jedem dev/main-Push fertig
+# gemerged UND entfernt sein (Solo-Dev-Workflow, kein PR-Review nötig).
+push_touches_devmain=0
+for _refline in "${REF_LINES[@]}"; do
+  read -r _lr _ls rref _rs <<<"$_refline" || true
+  case "$rref" in refs/heads/dev|refs/heads/main) push_touches_devmain=1 ;; esac
+done
+
+if [ "$push_touches_devmain" = 1 ]; then
+  # beta-appcast-pointer ist eine dauerhafte, CI-verwaltete Orphan-Branch
+  # (force-gepusht von release.yml/publish_beta_fallback.sh, s. Abschnitt 3/4
+  # oben) — kein Wildwuchs, sondern Infrastruktur. Von der Hygiene-Prüfung
+  # ausgenommen; die Recovery-Variante (ein manueller, einmaliger Wiederher-
+  # stellungs-Branch) fällt NICHT unter diese Ausnahme.
+  stray_branches=$(git for-each-ref --format='%(refname:short)' refs/heads/ \
+    | grep -vE '^(dev|main|beta-appcast-pointer)$' || true)
+  if [ -n "$stray_branches" ]; then
+    cat >&2 <<EOF
+
+╔══════════════════════════════════════════════════════════════╗
+║  PUSH BLOCKIERT: lokale Branches außer dev/main vorhanden    ║
+╚══════════════════════════════════════════════════════════════╝
+EOF
+    echo "$stray_branches" | sed 's/^/  - /' >&2
+    cat >&2 <<EOF
+
+Nur dev und main dürfen dauerhaft existieren. Erst aufräumen:
+  git branch -D <branch>    (nach Verifikation: Inhalt bereits in dev?)
+oder den echten, fehlenden Inhalt vorher nach dev mergen.
+EOF
+    exit 1
+  fi
+
+  stray_worktrees=$(git worktree list --porcelain \
+    | awk -v root="$ROOT" '/^worktree /{ if ($2 != root) print $2 }')
+  if [ -n "$stray_worktrees" ]; then
+    cat >&2 <<EOF
+
+╔══════════════════════════════════════════════════════════════╗
+║  PUSH BLOCKIERT: offene Worktrees außer dem Haupt-Tree       ║
+╚══════════════════════════════════════════════════════════════╝
+EOF
+    echo "$stray_worktrees" | sed 's/^/  - /' >&2
+    echo "" >&2
+    echo "Aufräumen: git worktree remove <pfad> (ggf. --force)" >&2
+    exit 1
+  fi
+
+  if [ -n "${REMOTE:-}" ] && git ls-remote --exit-code "$REMOTE" >/dev/null 2>&1; then
+    stray_remote=$(git ls-remote --heads "$REMOTE" 2>/dev/null \
+      | awk '{print $2}' | sed 's#refs/heads/##' | grep -vE '^(dev|main|beta-appcast-pointer)$' || true)
+    if [ -n "$stray_remote" ]; then
+      cat >&2 <<EOF
+
+╔══════════════════════════════════════════════════════════════╗
+║  PUSH BLOCKIERT: Remote-Branches außer dev/main vorhanden    ║
+╚══════════════════════════════════════════════════════════════╝
+EOF
+      echo "$stray_remote" | sed 's/^/  - /' >&2
+      echo "" >&2
+      echo "Aufräumen: git push $REMOTE --delete <branch>" >&2
+      exit 1
+    fi
+  fi
+fi
+
 # ── 3. Full Push-Range Scan (PROTECTED, Secrets, AI-Trailer) ───────────
 B1="SUPA"; B2="BASE_SERVICE_ROLE_KEY"; B3="ADMIN_API"; B4="_KEY"
 SECRET_PATTERNS="${B1}${B2}=.{20,}|${B3}${B4}=.{20,}|sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{20,}"
