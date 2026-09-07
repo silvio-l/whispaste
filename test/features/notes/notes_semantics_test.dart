@@ -78,7 +78,8 @@ Widget _buildPanel({bool trashed = false}) {
     onDeleteForever: () {},
     onAddTag: (_) {},
     onRemoveTag: (_) {},
-    onExport: () {},
+    onDuplicate: () {},
+  onExport: () {},
     onVoiceTranscript: (_) {},
   );
 }

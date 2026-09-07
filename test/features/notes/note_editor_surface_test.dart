@@ -52,6 +52,7 @@ Widget _panel({
   onDeleteForever: () {},
   onAddTag: (_) {},
   onRemoveTag: (_) {},
+  onDuplicate: () {},
   onExport: () {},
   onVoiceTranscript: (_) {},
 );

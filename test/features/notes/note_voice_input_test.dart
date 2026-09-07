@@ -550,6 +550,7 @@ Widget _panelFor(
   onDeleteForever: () {},
   onAddTag: (_) {},
   onRemoveTag: (_) {},
+  onDuplicate: () {},
   onExport: () {},
   onVoiceTranscript: onVoiceTranscript,
 );

@@ -130,7 +130,8 @@ Widget _panel({
     onDeleteForever: () {},
     onAddTag: (_) {},
     onRemoveTag: (_) {},
-    onExport: () {},
+    onDuplicate: () {},
+  onExport: () {},
     onVoiceTranscript: (_) {},
   );
 }
