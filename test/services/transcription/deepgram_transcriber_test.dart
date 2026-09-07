@@ -73,7 +73,14 @@ String _deepgramResponse(String transcript) => jsonEncode({
 });
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  // Deliberately no TestWidgetsFlutterBinding.ensureInitialized() here: it
+  // installs a fake HttpOverrides that makes every dart:io-backed HTTP
+  // request return a synthetic 400 without touching the network (see
+  // flutter_test's own warning), which silently broke the (live-smoke)
+  // group below and would break the (canary) group added alongside it
+  // whenever they were actually exercised with a real client. Nothing in
+  // (mocked) uses MockClient, which bypasses dart:io/HttpOverrides entirely
+  // and is unaffected either way.
 
   group('DeepgramTranscriber (mocked)', () {
     test('returns transcript on HTTP 200', () async {
@@ -395,5 +402,44 @@ void main() {
       },
       tags: ['live'],
     );
+  });
+
+  group('DeepgramTranscriber (canary)', () {
+    // Provider-drift canary: no API key needed. Asserts Deepgram still
+    // rejects bad credentials with the HTTP 401 + body shape
+    // DeepgramTranscriber.transcribe() parses as authError — catches a
+    // silent upstream API change before a user's cloud transcription does.
+    // Makes a real network call unconditionally, so it's excluded from the
+    // default gate via the `canary` tag (see .github/workflows/ci.yml's
+    // `--exclude-tags=golden,canary`) and instead run weekly by
+    // .github/workflows/provider-drift-canary.yml.
+    test('rejects an invalid API key against the real endpoint', () async {
+      final wavFile = File(
+        '${Directory.current.path}/test/fixtures/hello_world.wav',
+      );
+      final wavBytes = await wavFile.readAsBytes();
+
+      final container = _makeContainer({
+        'wp_deepgram_api_key': 'canary-invalid',
+      });
+      addTearDown(container.dispose);
+
+      final realClient = http.Client();
+      final transcriber = container.read(_testTranscriberProvider(realClient));
+      addTearDown(transcriber.release);
+
+      await transcriber.prepare();
+
+      await expectLater(
+        transcriber.transcribe(wavBytes.toList()),
+        throwsA(
+          isA<TranscriberException>().having(
+            (e) => e.reason,
+            'reason',
+            TranscriberFailureReason.authError,
+          ),
+        ),
+      );
+    }, tags: ['canary']);
   });
 }

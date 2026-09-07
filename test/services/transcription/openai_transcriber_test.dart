@@ -62,7 +62,13 @@ ProviderContainer _makeContainer(
 List<int> _silentWav() => List.filled(44, 0); // minimal WAV bytes
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  // Deliberately no TestWidgetsFlutterBinding.ensureInitialized() here: it
+  // installs a fake HttpOverrides that makes every dart:io-backed HTTP
+  // request return a synthetic 400 without touching the network (see
+  // flutter_test's own warning), which silently broke the (live-smoke) and
+  // (canary) groups below whenever they were actually exercised with a real
+  // client. Nothing above uses MockClient, which bypasses dart:io/
+  // HttpOverrides entirely and is unaffected either way.
 
   group('OpenAiTranscriber', () {
     test('returns transcript on HTTP 200', () async {
@@ -214,5 +220,103 @@ void main() {
 
       expect(sawPromptField, isFalse);
     });
+  });
+
+  group('OpenAiTranscriber (live-smoke)', () {
+    // Auto-skipped when OPENAI_API_KEY dart-define is absent. Mirrors
+    // DeepgramTranscriber's live-smoke group.
+    const apiKey = String.fromEnvironment('OPENAI_API_KEY');
+
+    test(
+      'live: transcribes WAV fixture and returns non-empty string',
+      () async {
+        if (apiKey.isEmpty) {
+          // Skip gracefully without dart-define.
+          return;
+        }
+
+        final wavFile = File(
+          '${Directory.current.path}/test/fixtures/hello_world.wav',
+        );
+        expect(
+          wavFile.existsSync(),
+          isTrue,
+          reason:
+              'test/fixtures/hello_world.wav must exist for live-smoke test',
+        );
+        final wavBytes = await wavFile.readAsBytes();
+
+        // Use a real http.Client (no mock).
+        final container = ProviderContainer(
+          overrides: [
+            secureKeyStoreProvider.overrideWithValue(
+              _FakeSecureKeyStore({'wp_openai_api_key': apiKey}),
+            ),
+            settingsProvider.overrideWith(
+              () => _FakeSettingsNotifier(AppSettings.defaults),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final realClient = http.Client();
+        final transcriber = container.read(
+          _testTranscriberProvider(realClient),
+        );
+        addTearDown(transcriber.release);
+
+        await transcriber.prepare();
+        final result = await transcriber.transcribe(
+          wavBytes.toList(),
+          language: 'en',
+        );
+
+        expect(
+          result.isNotEmpty,
+          isTrue,
+          reason: 'Live OpenAI response should have a non-empty transcript',
+        );
+      },
+      tags: ['live'],
+    );
+  });
+
+  group('OpenAiTranscriber (canary)', () {
+    // Provider-drift canary: no API key needed. Asserts OpenAI still rejects
+    // bad credentials with the HTTP 401 + JSON body shape
+    // OpenAiTranscriber.transcribe() parses as authError — catches a silent
+    // upstream API change before a user's cloud transcription does. Makes a
+    // real network call unconditionally, so it's excluded from the default
+    // gate via the `canary` tag (see .github/workflows/ci.yml's
+    // `--exclude-tags=golden,canary`) and instead run weekly by
+    // .github/workflows/provider-drift-canary.yml.
+    test('rejects an invalid API key against the real endpoint', () async {
+      final wavFile = File(
+        '${Directory.current.path}/test/fixtures/hello_world.wav',
+      );
+      final wavBytes = await wavFile.readAsBytes();
+
+      final container = _makeContainer({
+        'wp_openai_api_key': 'sk-canary-invalid',
+      });
+      addTearDown(container.dispose);
+
+      final realClient = http.Client();
+      final transcriber = container.read(_testTranscriberProvider(realClient));
+      addTearDown(transcriber.release);
+
+      await transcriber.prepare();
+
+      await expectLater(
+        transcriber.transcribe(wavBytes.toList()),
+        throwsA(
+          isA<TranscriberException>().having(
+            (e) => e.reason,
+            'reason',
+            TranscriberFailureReason.authError,
+          ),
+        ),
+      );
+    }, tags: ['canary']);
   });
 }
