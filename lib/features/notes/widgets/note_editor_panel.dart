@@ -205,6 +205,19 @@ class NoteEditorPanel extends StatelessWidget {
                         // NAME, so screen readers would otherwise announce an unnamed
                         // button (and bySemanticsLabel tests could not find it).
                         Semantics(
+                          label: l10n.actionDuplicate,
+                          button: true,
+                          child: IconButton(
+                            onPressed: onDuplicate,
+                            tooltip: l10n.actionDuplicate,
+                            icon: const Icon(
+                              LucideIcons.files,
+                              size: WpIconSize.md,
+                              color: textMuted,
+                            ),
+                          ),
+                        ),
+                        Semantics(
                           label: l10n.notesCopy,
                           button: true,
                           child: IconButton(
@@ -285,19 +298,6 @@ class NoteEditorPanel extends StatelessWidget {
                             ),
                           ),
                         ] else ...[
-                          Semantics(
-                            label: l10n.actionDuplicate,
-                            button: true,
-                            child: IconButton(
-                              onPressed: onDuplicate,
-                              tooltip: l10n.actionDuplicate,
-                              icon: const Icon(
-                                LucideIcons.files,
-                                size: WpIconSize.md,
-                                color: textMuted,
-                              ),
-                            ),
-                          ),
                           Semantics(
                             label: note.pinned
                                 ? l10n.notesUnfavorite

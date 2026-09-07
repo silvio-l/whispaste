@@ -69,7 +69,6 @@ Widget _buildPanel({bool trashed = false}) {
     controller: controller,
     focusNode: focusNode,
     onClose: () {},
-    onDuplicate: () {},
     onToggleFavorite: () {},
     onQuickNoteSet: () {},
     onQuickNoteClear: () {},
@@ -78,6 +77,7 @@ Widget _buildPanel({bool trashed = false}) {
     onDeleteForever: () {},
     onAddTag: (_) {},
     onRemoveTag: (_) {},
+    onDuplicate: () {},
     onExport: () {},
     onVoiceTranscript: (_) {},
   );

@@ -541,7 +541,6 @@ Widget _panelFor(
   controller: controller,
   focusNode: focusNode,
   onClose: () {},
-  onDuplicate: () {},
   onToggleFavorite: () {},
   onQuickNoteSet: () {},
   onQuickNoteClear: () {},
@@ -550,6 +549,7 @@ Widget _panelFor(
   onDeleteForever: () {},
   onAddTag: (_) {},
   onRemoveTag: (_) {},
+  onDuplicate: () {},
   onExport: () {},
   onVoiceTranscript: onVoiceTranscript,
 );
