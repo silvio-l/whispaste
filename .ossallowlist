@@ -9,10 +9,13 @@
 # Root-Markdown + Lizenz + Disclosure
 README.md
 SECURITY.md
+NETWORK.md
 LICENSE
 CHANGELOG.md
 SPONSORS.md
 LOGGING.md
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
 
 # Build-/Paket-Metadaten
 pubspec.yaml

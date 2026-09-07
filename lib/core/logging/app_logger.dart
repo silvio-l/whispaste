@@ -205,6 +205,15 @@ _LogFileSink? _fileSink;
 /// Returns the path to the current log file, or null if not initialized.
 String? get logFilePath => _fileSink?._file?.path;
 
+/// Closes the open file handle so a temp directory used via
+/// [paths.appDataDirOverride] can be deleted afterwards — on Windows,
+/// deleting a directory while one of its files is still open throws.
+@visibleForTesting
+Future<void> closeLogFileSinkForTest() async {
+  await _fileSink?.close();
+  _fileSink = null;
+}
+
 /// Call once during app bootstrap (before `runApp`).
 ///
 /// Wires `package:logging` → `developer.log` + `debugPrint` (debug only)

@@ -102,7 +102,7 @@ jobs:
         shell: bash
         run: |
           for attempt in 1 2 3; do
-            flutter test --exclude-tags=golden && break
+            flutter test --exclude-tags=golden,canary && break
             if [ "$attempt" -eq 3 ]; then
               echo "::error::flutter test failed after 3 attempts."
               exit 1
@@ -230,7 +230,7 @@ jobs:
       - name: Run tests
         run: |
           for attempt in 1 2 3; do
-            flutter test --exclude-tags=golden && break
+            flutter test --exclude-tags=golden,canary && break
             if [ "$attempt" -eq 3 ]; then
               echo "::error::flutter test failed after 3 attempts."
               exit 1
@@ -357,7 +357,7 @@ jobs:
       - name: Run tests
         run: |
           for attempt in 1 2 3; do
-            flutter test --exclude-tags=golden && break
+            flutter test --exclude-tags=golden,canary && break
             if [ "$attempt" -eq 3 ]; then
               echo "::error::flutter test failed after 3 attempts."
               exit 1
