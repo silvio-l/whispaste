@@ -350,7 +350,7 @@ class HistoryDatabase extends _$HistoryDatabase {
 
     // 1. Rename Go's "text" column to Drift's "content".
     if (colNames.contains('text') && !colNames.contains('content')) {
-      debugPrint('[Migration] Renaming column "text" → "content"');
+      _log.info('Renaming column "text" → "content"');
       await customStatement(
         'ALTER TABLE history_entries RENAME COLUMN "text" TO "content"',
       );
@@ -359,7 +359,7 @@ class HistoryDatabase extends _$HistoryDatabase {
 
     // 2. Add "deleted_at" column if missing (Go v1.1.3 doesn't have it).
     if (!colNames.contains('deleted_at')) {
-      debugPrint('[Migration] Adding column "deleted_at"');
+      _log.info('Adding column "deleted_at"');
       await customStatement(
         'ALTER TABLE history_entries ADD COLUMN deleted_at INTEGER',
       );
@@ -368,7 +368,7 @@ class HistoryDatabase extends _$HistoryDatabase {
 
     // 3. Add "title_edited" column if missing (Go v1.1.3 doesn't have it).
     if (!colNames.contains('title_edited')) {
-      debugPrint('[Migration] Adding column "title_edited"');
+      _log.info('Adding column "title_edited"');
       await customStatement(
         'ALTER TABLE history_entries ADD COLUMN title_edited '
         'INTEGER NOT NULL DEFAULT 0',
@@ -403,8 +403,8 @@ class HistoryDatabase extends _$HistoryDatabase {
     if (changed) {
       await _recreateFtsWithTags();
       _goMigrationEntryCount = await _countHistoryEntries();
-      debugPrint(
-        '[Migration] Go-era schema reconciliation complete '
+      _log.info(
+        'Go-era schema reconciliation complete '
         '($_goMigrationEntryCount dictations migrated)',
       );
     }
@@ -429,7 +429,7 @@ class HistoryDatabase extends _$HistoryDatabase {
 
       for (final (colName, colDef) in columnsToAdd) {
         if (!colNames.contains(colName)) {
-          debugPrint('[Migration] Adding column "$colName" to daily_stats');
+          _log.info('Adding column "$colName" to daily_stats');
           await customStatement(
             'ALTER TABLE daily_stats ADD COLUMN $colName $colDef',
           );
@@ -437,7 +437,7 @@ class HistoryDatabase extends _$HistoryDatabase {
       }
     } catch (e) {
       // Table may not exist yet during initial creation — skip.
-      debugPrint('[Migration] Could not add daily_stats columns: $e');
+      _log.warning('Could not add daily_stats columns: $e', e);
     }
   }
 
@@ -456,7 +456,7 @@ class HistoryDatabase extends _$HistoryDatabase {
       final colNames = cols.map((r) => r.data['name'] as String).toSet();
 
       if (!colNames.contains('color_slot')) {
-        debugPrint('[Migration] Adding column "color_slot" to history_entries');
+        _log.info('Adding column "color_slot" to history_entries');
         await customStatement(
           'ALTER TABLE history_entries ADD COLUMN color_slot '
           'INTEGER NOT NULL DEFAULT 0',
@@ -467,9 +467,7 @@ class HistoryDatabase extends _$HistoryDatabase {
       }
     } catch (e) {
       // Table may not exist yet during initial creation — skip.
-      debugPrint(
-        '[Migration] Could not add history_entries color_slot column: $e',
-      );
+      _log.warning('Could not add history_entries color_slot column: $e', e);
     }
   }
 
@@ -489,7 +487,7 @@ class HistoryDatabase extends _$HistoryDatabase {
       final colNames = cols.map((r) => r.data['name'] as String).toSet();
 
       if (!colNames.contains('is_quick_note')) {
-        debugPrint('[Migration] Adding column "is_quick_note" to notes');
+        _log.info('Adding column "is_quick_note" to notes');
         await customStatement(
           'ALTER TABLE notes ADD COLUMN is_quick_note '
           'INTEGER NOT NULL DEFAULT 0',
@@ -497,7 +495,7 @@ class HistoryDatabase extends _$HistoryDatabase {
       }
     } catch (e) {
       // Table may not exist yet during initial creation — skip.
-      debugPrint('[Migration] Could not add notes is_quick_note column: $e');
+      _log.warning('Could not add notes is_quick_note column: $e', e);
     }
   }
 
@@ -521,14 +519,14 @@ class HistoryDatabase extends _$HistoryDatabase {
       final colNames = cols.map((r) => r.data['name'] as String).toSet();
 
       if (!colNames.contains('kind')) {
-        debugPrint('[Migration] Adding column "kind" to snippets');
+        _log.info('Adding column "kind" to snippets');
         await customStatement(
           "ALTER TABLE snippets ADD COLUMN kind TEXT NOT NULL DEFAULT 'static'",
         );
       }
     } catch (e) {
       // Table may not exist yet during initial creation — skip.
-      debugPrint('[Migration] Could not add snippets kind column: $e');
+      _log.warning('Could not add snippets kind column: $e', e);
     }
   }
 
@@ -548,9 +546,8 @@ class HistoryDatabase extends _$HistoryDatabase {
       final colNames = cols.map((r) => r.data['name'] as String).toSet();
 
       if (!colNames.contains('smart_mode_edited_content')) {
-        debugPrint(
-          '[Migration] Adding column "smart_mode_edited_content" to '
-          'history_entries',
+        _log.info(
+          'Adding column "smart_mode_edited_content" to history_entries',
         );
         await customStatement(
           'ALTER TABLE history_entries ADD COLUMN '
@@ -559,9 +556,9 @@ class HistoryDatabase extends _$HistoryDatabase {
       }
     } catch (e) {
       // Table may not exist yet during initial creation — skip.
-      debugPrint(
-        '[Migration] Could not add history_entries '
-        'smart_mode_edited_content column: $e',
+      _log.warning(
+        'Could not add history_entries smart_mode_edited_content column: $e',
+        e,
       );
     }
   }
@@ -591,9 +588,7 @@ class HistoryDatabase extends _$HistoryDatabase {
       }
     } catch (e) {
       // Table may not exist yet during initial creation — skip.
-      debugPrint(
-        '[Migration] Could not backfill interactive snippet templates: $e',
-      );
+      _log.warning('Could not backfill interactive snippet templates: $e', e);
     }
   }
 
@@ -605,24 +600,20 @@ class HistoryDatabase extends _$HistoryDatabase {
       final colNames = cols.map((r) => r.data['name'] as String).toSet();
 
       if (!colNames.contains('match_mode')) {
-        debugPrint(
-          '[Migration] Adding column "match_mode" to text_replacements',
-        );
+        _log.info('Adding column "match_mode" to text_replacements');
         await customStatement(
           'ALTER TABLE text_replacements ADD COLUMN match_mode '
           "TEXT NOT NULL DEFAULT 'exact'",
         );
       }
       if (!colNames.contains('fuzzy_threshold')) {
-        debugPrint(
-          '[Migration] Adding column "fuzzy_threshold" to text_replacements',
-        );
+        _log.info('Adding column "fuzzy_threshold" to text_replacements');
         await customStatement(
           'ALTER TABLE text_replacements ADD COLUMN fuzzy_threshold REAL',
         );
       }
       if (!colNames.contains('origin')) {
-        debugPrint('[Migration] Adding column "origin" to text_replacements');
+        _log.info('Adding column "origin" to text_replacements');
         await customStatement(
           'ALTER TABLE text_replacements ADD COLUMN origin '
           "TEXT NOT NULL DEFAULT 'manual'",
@@ -630,9 +621,7 @@ class HistoryDatabase extends _$HistoryDatabase {
       }
     } catch (e) {
       // Table may not exist yet during initial creation — skip.
-      debugPrint(
-        '[Migration] Could not add text_replacements fuzzy columns: $e',
-      );
+      _log.warning('Could not add text_replacements fuzzy columns: $e', e);
     }
   }
 
@@ -749,7 +738,7 @@ class HistoryDatabase extends _$HistoryDatabase {
         ''');
       }
     });
-    debugPrint(
+    _log.info(
       'Drift migration v9 → v10: dropped Projects table, '
       'dropped HistoryEntries.project_id',
     );
@@ -806,11 +795,11 @@ class HistoryDatabase extends _$HistoryDatabase {
       await customStatement(
         'ALTER TABLE app_settings DROP COLUMN groq_api_key',
       );
-      debugPrint('[Migration] Dropped app_settings.groq_api_key column');
+      _log.info('Dropped app_settings.groq_api_key column');
     } catch (e) {
       // SQLite < 3.35 does not support DROP COLUMN — log and continue.
       // The column stays with an empty value; no user data is at risk.
-      debugPrint('[Migration] Could not drop groq_api_key column: $e');
+      _log.warning('Could not drop groq_api_key column: $e', e);
       Sentry.addBreadcrumb(
         Breadcrumb(
           message: 'groq_api_key column drop skipped (SQLite < 3.35)',
@@ -839,7 +828,7 @@ class HistoryDatabase extends _$HistoryDatabase {
         "UPDATE app_settings SET value = 'On Device' WHERE key = 'stt_provider'",
       );
       _groqMigrationOccurred = true;
-      debugPrint('[Migration] Rewrote stt_provider Groq → On Device');
+      _log.info('Rewrote stt_provider Groq → On Device');
 
       // Add a Sentry breadcrumb at level:info for reach analysis (no PII).
       Sentry.addBreadcrumb(
@@ -850,7 +839,7 @@ class HistoryDatabase extends _$HistoryDatabase {
         ),
       );
     } catch (e) {
-      debugPrint('[Migration] _migrateGroqSttProvider failed: $e');
+      _log.warning('_migrateGroqSttProvider failed: $e', e);
     }
   }
 
@@ -895,7 +884,7 @@ class HistoryDatabase extends _$HistoryDatabase {
            OR cost_usd IS NULL OR archived IS NULL
       ''');
     } catch (e) {
-      debugPrint('[Migration] _backfillNullableHistoryColumns failed: $e');
+      _log.warning('_backfillNullableHistoryColumns failed: $e', e);
     }
   }
 
@@ -960,7 +949,7 @@ class HistoryDatabase extends _$HistoryDatabase {
       ).getSingle();
       if ((taggedEntries.data['cnt'] as int? ?? 0) == 0) return;
 
-      debugPrint('[Migration] Migrating JSON tags → Tags/EntryTags tables');
+      _log.info('Migrating JSON tags → Tags/EntryTags tables');
       await _migrateJsonTags();
     } catch (e, st) {
       // Tables may not exist yet during initial creation — skip.
@@ -3060,9 +3049,9 @@ Future<void> _migrateFromNestedPath(String correctDir) async {
       );
     }
 
-    debugPrint('DB migrated from nested WhisPaste/WhisPaste/ path');
+    _log.info('DB migrated from nested WhisPaste/WhisPaste/ path');
   } catch (e) {
-    debugPrint('DB migration failed (will use existing location): $e');
+    _log.warning('DB migration failed (will use existing location): $e', e);
   }
 }
 

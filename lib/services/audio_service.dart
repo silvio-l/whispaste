@@ -6,7 +6,6 @@
 library;
 
 import 'dart:async';
-import 'dart:developer' as dev;
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -173,10 +172,7 @@ class AudioServiceNotifier extends Notifier<AudioStatus> {
   ///
   Future<void> startRecording() async {
     if (state.isRecording) {
-      dev.log(
-        'startRecording ignored — already recording',
-        name: 'AudioService',
-      );
+      _log.warning('startRecording ignored — already recording');
       return;
     }
 
@@ -276,7 +272,7 @@ class AudioServiceNotifier extends Notifier<AudioStatus> {
           _whisperConfig(device: selectedDevice, autoGain: libraryAutoGain),
         );
       } on Exception catch (e) {
-        dev.log('startStream failed: $e', name: 'AudioService');
+        _log.error('startStream failed: $e', e);
         await _ampSub?.cancel();
         _ampSub = null;
         await _amplitudeFromPcm?.dispose();
@@ -284,9 +280,9 @@ class AudioServiceNotifier extends Notifier<AudioStatus> {
         try {
           await wavWriter?.close();
         } on Exception catch (closeErr) {
-          dev.log(
+          _log.error(
             'Closing partial WAV after start error failed: $closeErr',
-            name: 'AudioService',
+            closeErr,
           );
         }
         _wavWriter = null;
@@ -317,18 +313,18 @@ class AudioServiceNotifier extends Notifier<AudioStatus> {
           // POV (we just stop writing more samples) but should not crash
           // the recording — they are surfaced in logs.
           wavWriter!.writeChunk(scaled).catchError((Object e) {
-            dev.log('WAV writer chunk failure: $e', name: 'AudioService');
+            _log.error('WAV writer chunk failure: $e', e);
           });
         },
         onError: (Object e) async {
-          dev.log('PCM stream error: $e', name: 'AudioService');
+          _log.error('PCM stream error: $e', e);
           await _failActiveRecording(
             errorMessage: 'pcm_stream_failed',
             deleteWav: true,
           );
         },
         onDone: () {
-          dev.log('PCM stream closed', name: 'AudioService');
+          _log.info('PCM stream closed');
         },
         cancelOnError: true,
       );
@@ -349,9 +345,8 @@ class AudioServiceNotifier extends Notifier<AudioStatus> {
       // this capture down now instead of ever reporting it as active, which
       // would otherwise leave the mic running unsupervised until some
       // later, unrelated start/stop cycle happened to absorb it.
-      dev.log(
+      _log.warning(
         'stop arrived during startup — aborting just-opened capture',
-        name: 'AudioService',
       );
       await _abortJustStartedRecording(wavPath);
       return;
@@ -381,10 +376,7 @@ class AudioServiceNotifier extends Notifier<AudioStatus> {
     try {
       await _wavWriter?.close();
     } on Exception catch (e) {
-      dev.log(
-        'Closing WAV after start/stop race failed: $e',
-        name: 'AudioService',
-      );
+      _log.error('Closing WAV after start/stop race failed: $e', e);
     }
     _wavWriter = null;
     _lastRecordingClippedSamples = 0;
@@ -397,10 +389,7 @@ class AudioServiceNotifier extends Notifier<AudioStatus> {
       try {
         await recorder.stop();
       } on Exception catch (e) {
-        dev.log(
-          'Stopping recorder after start/stop race failed: $e',
-          name: 'AudioService',
-        );
+        _log.error('Stopping recorder after start/stop race failed: $e', e);
       }
     }
 
@@ -494,7 +483,7 @@ class AudioServiceNotifier extends Notifier<AudioStatus> {
         _amplitudeController?.add(levelMapper.map(dbFs));
       },
       onError: (Object e) {
-        dev.log('Amplitude error: $e', name: 'AudioService');
+        _log.error('Amplitude error: $e', e);
       },
     );
     return amplitudeFromPcm;
@@ -516,7 +505,7 @@ class AudioServiceNotifier extends Notifier<AudioStatus> {
     try {
       await _wavWriter?.close();
     } on Exception catch (e) {
-      dev.log('Closing WAV after error failed: $e', name: 'AudioService');
+      _log.error('Closing WAV after error failed: $e', e);
     }
     _wavWriter = null;
     _lastRecordingClippedSamples = _gainProcessor?.clippedSamples ?? 0;
@@ -529,10 +518,7 @@ class AudioServiceNotifier extends Notifier<AudioStatus> {
       try {
         await recorder.stop();
       } on Exception catch (e) {
-        dev.log(
-          'Stopping recorder after error failed: $e',
-          name: 'AudioService',
-        );
+        _log.error('Stopping recorder after error failed: $e', e);
       }
     }
 
@@ -556,13 +542,12 @@ class AudioServiceNotifier extends Notifier<AudioStatus> {
   Future<String?> stopRecording() async {
     if (!state.isRecording) {
       if (_startStopArbiter.requestStopWhileNotRecording()) {
-        dev.log(
+        _log.warning(
           'stopRecording arrived mid-startup — capture will be aborted '
           'once setup finishes',
-          name: 'AudioService',
         );
       } else {
-        dev.log('stopRecording ignored — not recording', name: 'AudioService');
+        _log.warning('stopRecording ignored — not recording');
       }
       return null;
     }
@@ -584,12 +569,11 @@ class AudioServiceNotifier extends Notifier<AudioStatus> {
       try {
         await recorder.stop().timeout(const Duration(seconds: 3));
       } on TimeoutException {
-        dev.log(
+        _log.warning(
           'recorder.stop() timed out after 3s — proceeding with captured WAV',
-          name: 'AudioService',
         );
       } on Exception catch (e) {
-        dev.log('Error stopping recorder: $e', name: 'AudioService');
+        _log.error('Error stopping recorder: $e', e);
       }
     }
 
@@ -601,7 +585,7 @@ class AudioServiceNotifier extends Notifier<AudioStatus> {
     try {
       await _wavWriter?.close();
     } on Exception catch (e) {
-      dev.log('Error closing WAV writer: $e', name: 'AudioService');
+      _log.error('Error closing WAV writer: $e', e);
     }
     _wavWriter = null;
 
@@ -619,10 +603,9 @@ class AudioServiceNotifier extends Notifier<AudioStatus> {
 
     await _restoreDefaultInputRouting();
 
-    dev.log(
+    _log.info(
       'Recording stopped → $wavPath '
       '(clippedSamples=$_lastRecordingClippedSamples)',
-      name: 'AudioService',
     );
 
     state = AudioStatus(filePath: wavPath);
@@ -673,10 +656,10 @@ class AudioServiceNotifier extends Notifier<AudioStatus> {
       final file = File(path);
       if (await file.exists()) {
         await file.delete();
-        dev.log('Cleaned up: $path', name: 'AudioService');
+        _log.debug('Cleaned up: $path');
       }
     } on FileSystemException catch (e) {
-      dev.log('Cleanup failed: $e', name: 'AudioService');
+      _log.error('Cleanup failed: $e', e);
     }
   }
 
@@ -709,22 +692,18 @@ class AudioServiceNotifier extends Notifier<AudioStatus> {
           }
         } on FileSystemException catch (e) {
           // File may be locked by a concurrent instance — skip it.
-          dev.log(
-            'Skipping locked WAV: ${entity.path}: $e',
-            name: 'AudioService',
-          );
+          _log.warning('Skipping locked WAV: ${entity.path}: $e', e);
         }
       }
 
       if (cleaned > 0) {
-        dev.log(
+        _log.info(
           'Startup cleanup: removed $cleaned stale WAV file(s) '
           '(${(freedBytes / 1024 / 1024).toStringAsFixed(1)} MB)',
-          name: 'AudioService',
         );
       }
     } on Exception catch (e) {
-      dev.log('Stale WAV cleanup failed: $e', name: 'AudioService');
+      _log.error('Stale WAV cleanup failed: $e', e);
     }
   }
 
@@ -770,7 +749,7 @@ final audioInputDevicesProvider = FutureProvider<List<String>>((ref) async {
       recorder.dispose();
     }
   } catch (e) {
-    dev.log('Failed to enumerate input devices: $e', name: 'AudioService');
+    _log.error('Failed to enumerate input devices: $e', e);
     return ['Default'];
   }
 });

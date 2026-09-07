@@ -8,15 +8,20 @@
 ///
 /// **Persistent log file**: All info+ messages are written to
 /// `%LOCALAPPDATA%/Whispaste/logs/whispaste.log` (or platform equivalent).
-/// The file is rotated when it exceeds 2 MB.
+/// The file is rotated when it exceeds 2 MB, keeping up to 5 numbered
+/// backups (`whispaste.log.1` … `.5`, oldest deleted) — bounded at ~12 MB
+/// total. Lines are redacted for known secret patterns before hitting disk
+/// and single-lined to prevent log injection via attacker-controlled text.
 library;
 
+import 'dart:convert';
 import 'dart:developer' as dev;
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import 'package:whispaste_diagnostics/whispaste_diagnostics.dart' as diag;
 import '../../services/path_service.dart' as paths;
 import 'breadcrumbs.dart';
 import 'crash_fingerprints.dart';
@@ -56,13 +61,64 @@ class AppLogger {
 // Persistent file logging
 // ---------------------------------------------------------------------------
 
-/// Manages a log file with rotation (max 2 MB).
+/// Shifts numbered rotated log files up by one slot and moves the primary
+/// file (at [basePath]) into slot `.1`, dropping whatever previously sat in
+/// the oldest slot (`.$maxRotations`).
+///
+/// Pure file-system side effect, extracted from [_LogFileSink] so the
+/// rotation scheme (which [diag.rotatedLogPaths] / the diagnostics reader
+/// must match) can be exercised directly in tests.
+@visibleForTesting
+void shiftRotatedLogFiles(String basePath, {int maxRotations = 5}) {
+  final oldest = File('$basePath.$maxRotations');
+  if (oldest.existsSync()) oldest.deleteSync();
+  for (var i = maxRotations - 1; i >= 1; i--) {
+    final src = File('$basePath.$i');
+    if (src.existsSync()) src.renameSync('$basePath.${i + 1}');
+  }
+  final primary = File(basePath);
+  if (primary.existsSync()) primary.renameSync('$basePath.1');
+}
+
+/// Prevents log injection (forged fake log lines) and keeps a single
+/// physical line per record: control characters and newlines in
+/// caller-supplied content are escaped rather than written verbatim.
+@visibleForTesting
+String sanitizeLogLineForInjection(String s) {
+  return s
+      .replaceAll('\r\n', r'\n')
+      .replaceAll('\n', r'\n')
+      .replaceAll('\r', r'\n')
+      .replaceAll(RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F]'), '');
+}
+
+/// Manages a log file with rotation (max 2 MB) and bounded retention.
+///
+/// Rotation scheme: `whispaste.log` → `whispaste.log.1` → … →
+/// `whispaste.log.$_maxRotations` (oldest, deleted on next rotation).
+/// This matches [diag.rotatedLogPaths], which the diagnostics reader and
+/// the standalone WhisPaste-Diagnose CLI use to find rotated siblings —
+/// keep both in sync when changing `_maxRotations`.
+/// Worst-case disk usage is bounded at `_maxBytes * (_maxRotations + 1)`.
 class _LogFileSink {
   _LogFileSink._();
 
   static const int _maxBytes = 2 * 1024 * 1024; // 2 MB
+  static const int _maxRotations = 5;
   File? _file;
-  IOSink? _sink;
+
+  // Deliberately synchronous file I/O (RandomAccessFile), not an async
+  // IOSink: log calls arrive back-to-back from a broadcast StreamController
+  // (package:logging), so a rotation triggered by one write must be fully
+  // visible (new file handle, reset byte counter) before the very next
+  // write — an unawaited `IOSink.close()` racing a fresh `openWrite()` on
+  // the same path caused writes to land on an already-closed sink under
+  // load (`Bad state: StreamSink is bound to a stream`), silently breaking
+  // logging for the rest of the process. Synchronous writes are cheap
+  // enough at our volume (single short lines, not high-throughput
+  // streaming) and make the rotation boundary atomic from the caller's
+  // point of view.
+  RandomAccessFile? _raf;
   int _bytesWritten = 0;
 
   /// Initializes the file sink. Safe to call from main isolate only.
@@ -76,7 +132,7 @@ class _LogFileSink {
       _file = File('${logDir.path}${Platform.pathSeparator}whispaste.log');
       _bytesWritten = _file!.existsSync() ? _file!.lengthSync() : 0;
       _rotateIfNeeded();
-      _sink = _file!.openWrite(mode: FileMode.append);
+      _raf = _file!.openSync(mode: FileMode.append);
       _writeLine(
         '--- Log session started '
         '(${DateTime.now().toIso8601String()}) ---',
@@ -88,28 +144,29 @@ class _LogFileSink {
   }
 
   void _rotateIfNeeded() {
-    if (_file == null || _bytesWritten < _maxBytes) return;
+    final file = _file;
+    if (file == null || _bytesWritten < _maxBytes) return;
     try {
-      final oldFile = File('${_file!.path}.old');
-      if (oldFile.existsSync()) oldFile.deleteSync();
-      _file!.renameSync(oldFile.path);
-      _file = File(_file!.path.replaceAll('.old', ''));
+      _raf?.closeSync();
+      _raf = null;
+      shiftRotatedLogFiles(file.path, maxRotations: _maxRotations);
+      _file = File(file.path);
       _bytesWritten = 0;
+      _raf = _file!.openSync(mode: FileMode.append);
     } catch (e) {
       debugPrint('LogFileSink: rotate failed: $e');
     }
   }
 
   void _writeLine(String line) {
-    if (_sink == null) return;
+    if (_raf == null) return;
     try {
-      _sink!.writeln(line);
-      _bytesWritten += line.length + 1;
+      final redacted = diag.redactSensitive(line);
+      final bytes = utf8.encode('$redacted\n');
+      _raf!.writeFromSync(bytes);
+      _bytesWritten += bytes.length;
       if (_bytesWritten >= _maxBytes) {
-        _sink!.flush();
-        _sink!.close();
         _rotateIfNeeded();
-        _sink = _file!.openWrite(mode: FileMode.append);
       }
     } catch (e) {
       // Best-effort — don't propagate file I/O errors to logging callers.
@@ -120,18 +177,25 @@ class _LogFileSink {
 
   void write(LogRecord record) {
     final ts = record.time.toIso8601String().substring(0, 23);
+    final message = sanitizeLogLineForInjection(record.message);
     final buf = StringBuffer(
-      '$ts [${record.level.name}] ${record.loggerName}: ${record.message}',
+      '$ts [${record.level.name}] ${record.loggerName}: $message',
     );
-    if (record.error != null) buf.write('\n  Error: ${record.error}');
+    if (record.error != null) {
+      buf.write('\n  Error: ${sanitizeLogLineForInjection('${record.error}')}');
+    }
     if (record.stackTrace != null) buf.write('\n${record.stackTrace}');
     _writeLine(buf.toString());
   }
 
   Future<void> close() async {
-    await _sink?.flush();
-    await _sink?.close();
-    _sink = null;
+    try {
+      _raf?.flushSync();
+      _raf?.closeSync();
+    } catch (e) {
+      debugPrint('LogFileSink: close failed: $e');
+    }
+    _raf = null;
   }
 }
 

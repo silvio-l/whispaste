@@ -32,7 +32,9 @@
 ///   history (explicit no-op — path is bundle-ID-independent).
 library;
 
-import 'dart:developer' as dev;
+import '../core/logging/app_logger.dart';
+
+final _log = AppLogger('BundleIdMigration');
 
 /// A simple key-value store abstraction used by the migration.
 ///
@@ -145,24 +147,15 @@ Future<BundleIdMigrationResult> runBundleIdMigration({
         final newValue = await newSecureStore.read(key);
         if (newValue != null && newValue.isNotEmpty) {
           // New store already has a value — preserve it, skip copy.
-          dev.log(
-            'BundleIdMigration: skipping api key "$key" (new store already set)',
-            name: 'BundleIdMigration',
-          );
+          _log.debug('skipping api key "$key" (new store already set)');
           continue;
         }
 
         await newSecureStore.write(key, oldValue);
         copiedApiKeys.add(key);
-        dev.log(
-          'BundleIdMigration: copied api key "$key"',
-          name: 'BundleIdMigration',
-        );
+        _log.info('copied api key "$key"');
       } catch (e) {
-        dev.log(
-          'BundleIdMigration: error copying api key "$key": $e',
-          name: 'BundleIdMigration',
-        );
+        _log.error('error copying api key "$key": $e', e);
         capturedError = e;
       }
     }
@@ -175,24 +168,15 @@ Future<BundleIdMigrationResult> runBundleIdMigration({
 
         final newValue = await newPrefs.read(key);
         if (newValue != null && newValue.isNotEmpty) {
-          dev.log(
-            'BundleIdMigration: skipping pref "$key" (new store already set)',
-            name: 'BundleIdMigration',
-          );
+          _log.debug('skipping pref "$key" (new store already set)');
           continue;
         }
 
         await newPrefs.write(key, oldValue);
         copiedPreferences.add(key);
-        dev.log(
-          'BundleIdMigration: copied pref "$key"',
-          name: 'BundleIdMigration',
-        );
+        _log.info('copied pref "$key"');
       } catch (e) {
-        dev.log(
-          'BundleIdMigration: error copying pref "$key": $e',
-          name: 'BundleIdMigration',
-        );
+        _log.error('error copying pref "$key": $e', e);
         capturedError = e;
       }
     }
@@ -204,18 +188,11 @@ Future<BundleIdMigrationResult> runBundleIdMigration({
     try {
       await newPrefs.write(kBundleIdMigrationDoneKey, '1');
     } catch (e) {
-      dev.log(
-        'BundleIdMigration: could not write marker: $e',
-        name: 'BundleIdMigration',
-      );
+      _log.warning('could not write marker: $e', e);
     }
   }
 
-  dev.log(
-    'BundleIdMigration complete: '
-    'apiKeys=$copiedApiKeys, prefs=$copiedPreferences',
-    name: 'BundleIdMigration',
-  );
+  _log.info('complete: apiKeys=$copiedApiKeys, prefs=$copiedPreferences');
 
   return BundleIdMigrationResult(
     ranMigration: true,
