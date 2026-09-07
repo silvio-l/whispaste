@@ -5,6 +5,8 @@
 ### Bug Fixes
 
 - **Store-Bewertungen auf der Website zeigen jetzt das echte Veröffentlichungsdatum** statt des Zeitpunkts, zu dem wir sie zuletzt synchronisiert haben.
+- **Verlaufstitel blieb nach dem Bearbeiten eines Diktats auf dem alten Stand.** Der Titel wird jetzt bei jeder Textänderung neu abgeleitet — ein von dir vergebener eigener Titel bleibt davon unberührt, und ein versehentlich komplett geleertes Diktat behält seinen letzten Titel statt ihn zu verlieren.
+- **Hinweise bei fehlgeschlagenem Auto-Einfügen (kein Zielfenster, fehlende Berechtigung, blockiert durch Administratorrechte) waren fest auf Deutsch verdrahtet** und erschienen dadurch bei anderssprachigen Nutzer:innen nicht in ihrer eingestellten Sprache.
 
 ### Maintenance
 
