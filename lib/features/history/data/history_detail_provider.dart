@@ -9,6 +9,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:whispaste/core/data/database.dart';
+import 'package:whispaste/features/history/data/history_title.dart';
 import 'package:whispaste/services/smart_mode/smart_mode_presets.dart';
 import 'package:whispaste/services/smart_mode/smart_mode_retroactive_service.dart';
 
@@ -120,7 +121,19 @@ class HistoryDetailNotifier extends AsyncNotifier<HistoryDetailState> {
     if (current == null) return;
     await _db.updateEntry(
       _entryId,
-      HistoryEntriesCompanion(content: Value(newContent)),
+      HistoryEntriesCompanion(
+        content: Value(newContent),
+        // The title starts as a pure derivation of the content (see
+        // `DriftRecordingStore.save`) and stays that way until the user
+        // explicitly renames it (`titleEdited` flips true via
+        // [updateTitle]). Recompute it on every content save so editing a
+        // transcript's body doesn't leave the list row / detail-header
+        // title stuck on the pre-edit text (issue 02) — but never overwrite
+        // a title the user chose on purpose.
+        title: current.entry.titleEdited
+            ? const Value.absent()
+            : Value(deriveHistoryTitle(newContent)),
+      ),
     );
     state = AsyncValue.data(
       current.copyWith(entry: await _db.getEntry(_entryId) ?? current.entry),

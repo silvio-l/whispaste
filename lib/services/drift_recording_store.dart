@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/data/database.dart';
+import '../features/history/data/history_title.dart';
 import 'recording_store.dart';
 import 'replacements/text_replacement_matcher.dart';
 
@@ -48,16 +49,9 @@ class DriftRecordingStore implements RecordingStore {
       }
     }
 
-    // 2. Derive title: trim, then cut at last word boundary within 60 chars.
-    final trimmed = processedTranscript.trim();
-    final String title;
-    if (trimmed.length <= 60) {
-      title = trimmed;
-    } else {
-      final cut = trimmed.substring(0, 60);
-      final lastSpace = cut.lastIndexOf(' ');
-      title = lastSpace > 20 ? '${cut.substring(0, lastSpace)}…' : '$cut…';
-    }
+    // 2. Derive title (shared with the "Edit transcript" re-derivation in
+    // HistoryDetailNotifier.updateContent, issue 02).
+    final title = deriveHistoryTitle(processedTranscript);
 
     // 3. Save history entry. insertHistoryEntry (not upsertEntry) is the
     // real creation path — it also draws this entry's decorative color slot

@@ -95,6 +95,50 @@ void main() {
       final dbEntry = await db.getEntry(entryId);
       expect(dbEntry!.content, 'Updated content text');
     });
+
+    // Issue 02 — editing a transcript's body via "Edit transcript" used to
+    // leave the list row / detail-header title on the old (pre-edit) text,
+    // because the title was only ever derived once at creation time.
+    test('recomputes the derived title from the new content when the title '
+        'was never manually renamed', () async {
+      final notifier = await loadNotifier();
+      expect(
+        container.read(historyDetailProvider(entryId)).value!.entry.titleEdited,
+        isFalse,
+        reason: 'Precondition: the seeded entry has an auto-derived title',
+      );
+
+      await notifier.updateContent(
+        'Great, thanks for the quick turnaround on this.',
+      );
+
+      final state = container.read(historyDetailProvider(entryId));
+      expect(
+        state.value!.entry.title,
+        'Great, thanks for the quick turnaround on this.',
+      );
+
+      final dbEntry = await db.getEntry(entryId);
+      expect(dbEntry!.title, 'Great, thanks for the quick turnaround on this.');
+    });
+
+    test(
+      'leaves a manually-renamed title untouched when the content changes',
+      () async {
+        final notifier = await loadNotifier();
+
+        await notifier.updateTitle('My Custom Title');
+        await notifier.updateContent('Completely different content now');
+
+        final state = container.read(historyDetailProvider(entryId));
+        expect(state.value!.entry.title, 'My Custom Title');
+        expect(state.value!.entry.content, 'Completely different content now');
+        expect(state.value!.entry.titleEdited, isTrue);
+
+        final dbEntry = await db.getEntry(entryId);
+        expect(dbEntry!.title, 'My Custom Title');
+      },
+    );
   });
 
   // =========================================================================
