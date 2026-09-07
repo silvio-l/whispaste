@@ -25,6 +25,11 @@ void main() {
       addTearDown(() => tempDir.deleteSync(recursive: true));
       paths.appDataDirOverride = tempDir.path;
       addTearDown(() => paths.appDataDirOverride = null);
+      // Windows locks open files: the sink's RandomAccessFile must be
+      // closed before tempDir.deleteSync() above, or deletion throws
+      // PathAccessException. addTearDown runs LIFO, so registering this
+      // last makes it run first.
+      addTearDown(closeLogFileSinkForTest);
 
       await configureLogging();
       final log = AppLogger('AppLoggerFileSinkTest');
