@@ -96,7 +96,6 @@ Widget _tile({
   isFocused: isFocused,
   onTap: () {},
   onCopy: () {},
-  onDuplicate: () {},
   onFavoriteToggle: () {},
   onQuickNoteSet: onSet ?? () {},
   onQuickNoteClear: onClear ?? () {},
@@ -121,7 +120,6 @@ Widget _panel({
     controller: controller,
     focusNode: focusNode,
     onClose: () {},
-    onDuplicate: () {},
     onToggleFavorite: () {},
     onQuickNoteSet: onSet ?? () {},
     onQuickNoteClear: onClear ?? () {},
@@ -131,7 +129,7 @@ Widget _panel({
     onAddTag: (_) {},
     onRemoveTag: (_) {},
     onDuplicate: () {},
-  onExport: () {},
+    onExport: () {},
     onVoiceTranscript: (_) {},
   );
 }

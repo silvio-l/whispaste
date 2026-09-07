@@ -541,7 +541,6 @@ Widget _panelFor(
   controller: controller,
   focusNode: focusNode,
   onClose: () {},
-  onDuplicate: () {},
   onToggleFavorite: () {},
   onQuickNoteSet: () {},
   onQuickNoteClear: () {},

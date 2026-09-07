@@ -51,7 +51,6 @@ Widget _buildTile({
     isFocused: isFocused,
     onTap: () {},
     onCopy: () {},
-    onDuplicate: () {},
     onFavoriteToggle: () {},
     onQuickNoteSet: () {},
     onQuickNoteClear: () {},
@@ -69,7 +68,6 @@ Widget _buildPanel({bool trashed = false}) {
     controller: controller,
     focusNode: focusNode,
     onClose: () {},
-    onDuplicate: () {},
     onToggleFavorite: () {},
     onQuickNoteSet: () {},
     onQuickNoteClear: () {},
@@ -79,7 +77,7 @@ Widget _buildPanel({bool trashed = false}) {
     onAddTag: (_) {},
     onRemoveTag: (_) {},
     onDuplicate: () {},
-  onExport: () {},
+    onExport: () {},
     onVoiceTranscript: (_) {},
   );
 }
@@ -128,7 +126,6 @@ void main() {
             isFocused: false,
             onTap: () {},
             onCopy: () {},
-            onDuplicate: () {},
             onFavoriteToggle: () {},
             onQuickNoteSet: () {},
             onQuickNoteClear: () {},
