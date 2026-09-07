@@ -1007,6 +1007,102 @@ abstract class L10n {
   /// **'Open Settings'**
   String get pasteFailureOpenSettings;
 
+  /// No description provided for @pasteNotificationNoTargetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'WhisPaste: Auto-Paste Skipped'**
+  String get pasteNotificationNoTargetTitle;
+
+  /// No description provided for @pasteNotificationNoTargetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'No target app detected. Focus the destination app first, then start recording. The text is on the clipboard.'**
+  String get pasteNotificationNoTargetBody;
+
+  /// No description provided for @pasteNotificationNoTargetTray.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-Paste: Target App Missing'**
+  String get pasteNotificationNoTargetTray;
+
+  /// No description provided for @pasteNotificationRestartNeededTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'WhisPaste: Restart Needed'**
+  String get pasteNotificationRestartNeededTitle;
+
+  /// No description provided for @pasteNotificationRestartNeededBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The permission was granted, but WhisPaste is still running the old state. Click here to restart WhisPaste.'**
+  String get pasteNotificationRestartNeededBody;
+
+  /// No description provided for @pasteNotificationRestartNeededTray.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-Paste Blocked — Restart Needed'**
+  String get pasteNotificationRestartNeededTray;
+
+  /// No description provided for @pasteNotificationPermissionBlockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'WhisPaste: Auto-Paste Blocked'**
+  String get pasteNotificationPermissionBlockedTitle;
+
+  /// No description provided for @pasteNotificationPermissionResetEntryBody.
+  ///
+  /// In en, this message translates to:
+  /// **'WhisPaste needs permission to insert text into other apps — macOS calls this permission \'Accessibility\'. Click here: WhisPaste will clear a possibly stale entry and let macOS ask again.'**
+  String get pasteNotificationPermissionResetEntryBody;
+
+  /// No description provided for @pasteNotificationPermissionOpenSettingsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'WhisPaste needs permission to insert text into other apps — macOS calls this permission \'Accessibility\'. Click here or the tray icon to open System Settings.'**
+  String get pasteNotificationPermissionOpenSettingsBody;
+
+  /// No description provided for @pasteNotificationPermissionBlockedTray.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-Paste Blocked — Open System Settings'**
+  String get pasteNotificationPermissionBlockedTray;
+
+  /// No description provided for @pasteNotificationElevationBlockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'WhisPaste: Auto-Paste Blocked'**
+  String get pasteNotificationElevationBlockedTitle;
+
+  /// No description provided for @pasteNotificationElevationBlockedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The target app is running with administrator rights. Restart WhisPaste as an administrator too, to paste into that app.'**
+  String get pasteNotificationElevationBlockedBody;
+
+  /// No description provided for @pasteNotificationElevationBlockedTray.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-Paste Blocked — Administrator Needed'**
+  String get pasteNotificationElevationBlockedTray;
+
+  /// No description provided for @pasteNotificationFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'WhisPaste: Auto-Paste Failed'**
+  String get pasteNotificationFailedTitle;
+
+  /// No description provided for @pasteNotificationFailedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The system rejected the paste. The text is on the clipboard — paste it manually with ⌘V / Ctrl+V.'**
+  String get pasteNotificationFailedBody;
+
+  /// No description provided for @pasteNotificationFailedTray.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-Paste Failed'**
+  String get pasteNotificationFailedTray;
+
   /// No description provided for @pasteCapabilityCheckTitle.
   ///
   /// In en, this message translates to:

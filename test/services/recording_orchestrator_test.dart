@@ -4111,7 +4111,10 @@ void main() {
         await orch.stopRecording();
         await Future<void>.delayed(Duration.zero);
 
-        expect(fakeAttention.lastTitle, 'WhisPaste: Auto-Einfügen blockiert');
+        // Default test settings use the (English) locale default — issue
+        // overlay-status-l10n/01 root cause 2: this used to be a hardcoded
+        // German literal regardless of the app's language setting.
+        expect(fakeAttention.lastTitle, 'WhisPaste: Auto-Paste Blocked');
 
         // Baseline: the handoff bit is not yet set.
         expect(
@@ -4171,7 +4174,7 @@ void main() {
 
         expect(
           fakeAttention.lastTitle,
-          'WhisPaste: Neustart nötig',
+          'WhisPaste: Restart Needed',
           reason:
               'When needsRestart is true the notification must point at a '
               'restart, not another trip to Settings.',
@@ -4220,10 +4223,10 @@ void main() {
         await orch.stopRecording();
         await Future<void>.delayed(Duration.zero);
 
-        expect(fakeAttention.lastTitle, 'WhisPaste: Auto-Einfügen blockiert');
+        expect(fakeAttention.lastTitle, 'WhisPaste: Auto-Paste Blocked');
         expect(
           fakeAttention.lastBody,
-          contains('veralteten Eintrag'),
+          contains('stale entry'),
           reason:
               'The body must promise what the click does. Repeating the plain '
               '"open System Settings" line while the click now resets the '
@@ -4377,6 +4380,98 @@ void main() {
         );
       },
     );
+
+    // =========================================================================
+    // Notification/tray l10n (issue overlay-status-l10n/01, root cause 2).
+    // Every `_reportPasteFailure` call site used to pass hardcoded German
+    // literal strings for title/body/trayLabel, ignoring the app's own
+    // language setting entirely (not even the OS-locale bug root cause 1
+    // fixed — always German, regardless of any setting). Locks in that the
+    // native-notification/tray text now follows `AppSettings.locale`.
+    // =========================================================================
+
+    group('Notification/tray l10n (issue 01, root cause 2)', () {
+      Future<void> failPasteWithLocale(
+        NativePasteStatus status,
+        String locale,
+      ) async {
+        fakeDesktopPaste.pasteStatusOverride = status;
+        fakeDesktopPaste.typeStatusOverride = status;
+
+        container.dispose();
+        container = buildPasteContainer(
+          AppSettings(
+            interface_: InterfaceSettings(locale: locale),
+            stt: const SttSettings(model: 'whisper-small', language: 'English'),
+            afterTranscriptionSection: const AfterTranscriptionSettings(
+              afterTranscription: 'paste',
+            ),
+            onboarding: const OnboardingSettings(onboardingCompleted: true),
+          ),
+        );
+        await container.read(settingsProvider.future);
+        container.read(systemAttentionServiceProvider);
+
+        final orch = await startRecordingPhase();
+        fakeStt.transcriptToReturn = 'l10n routing test';
+        await orch.stopRecording();
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      test('noTarget notification/tray text is English under an English '
+          'locale, not German', () async {
+        await failPasteWithLocale(NativePasteStatus.noTarget, 'en');
+
+        expect(fakeAttention.lastTitle, 'WhisPaste: Auto-Paste Skipped');
+        expect(
+          fakeAttention.lastBody,
+          'No target app detected. Focus the destination app first, then '
+          'start recording. The text is on the clipboard.',
+        );
+        expect(
+          fakeTray.setActionNeededCalls.single,
+          'Auto-Paste: Target App Missing',
+        );
+      });
+
+      test('noTarget notification/tray text stays German under a German '
+          'locale', () async {
+        await failPasteWithLocale(NativePasteStatus.noTarget, 'de');
+
+        expect(
+          fakeAttention.lastTitle,
+          'WhisPaste: Auto-Einfügen übersprungen',
+        );
+        expect(
+          fakeTray.setActionNeededCalls.single,
+          'Auto-Einfügen: Ziel-App fehlte',
+        );
+      });
+
+      test('elevationBlocked (Windows UIPI) notification/tray text is English '
+          'under an English locale, not German', () async {
+        await failPasteWithLocale(NativePasteStatus.foregroundBlocked, 'en');
+
+        expect(fakeAttention.lastTitle, 'WhisPaste: Auto-Paste Blocked');
+        expect(
+          fakeAttention.lastBody,
+          'The target app is running with administrator rights. Restart '
+          'WhisPaste as an administrator too, to paste into that app.',
+        );
+        expect(
+          fakeTray.setActionNeededCalls.single,
+          'Auto-Paste Blocked — Administrator Needed',
+        );
+      });
+
+      test('generic "failed" notification/tray text is English under an '
+          'English locale, not German', () async {
+        await failPasteWithLocale(NativePasteStatus.postFailed, 'en');
+
+        expect(fakeAttention.lastTitle, 'WhisPaste: Auto-Paste Failed');
+        expect(fakeTray.setActionNeededCalls.single, 'Auto-Paste Failed');
+      });
+    });
   });
 
   // =========================================================================

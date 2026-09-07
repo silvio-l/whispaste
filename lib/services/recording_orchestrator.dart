@@ -7,6 +7,7 @@ library;
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' show Locale;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +17,7 @@ import 'package:path/path.dart' as p;
 import '../core/config/build_config.dart';
 import '../core/config/settings_enums.dart';
 import '../core/config/settings_provider.dart';
+import '../core/l10n/generated/app_localizations.dart';
 import '../core/logging/app_logger.dart';
 import '../core/logging/perf_instrumentation.dart';
 import '../core/recording/recording_state.dart';
@@ -2158,13 +2160,13 @@ class RecordingOrchestrator extends Notifier<void> {
           'frontmost when recording started. Focus the destination app '
           'first, then trigger recording.',
         );
+        final noTargetL10n = _resolveL10n();
         _reportPasteFailure(
           outcome: PasteOutcome.noTarget,
           kind: AttentionKind.pasteBlockedNoTarget,
-          title: 'WhisPaste: Auto-Einfügen übersprungen',
-          body:
-              'Keine Ziel-App erkannt. Fokussiere zuerst die Ziel-App, dann starte die Aufnahme. Der Text liegt in der Zwischenablage.',
-          trayLabel: 'Auto-Einfügen: Ziel-App fehlte',
+          title: noTargetL10n.pasteNotificationNoTargetTitle,
+          body: noTargetL10n.pasteNotificationNoTargetBody,
+          trayLabel: noTargetL10n.pasteNotificationNoTargetTray,
         );
         return false;
       case PasteOutcome.permissionMissing:
@@ -2208,20 +2210,21 @@ class RecordingOrchestrator extends Notifier<void> {
               ? 'reset-entry-then-grant'
               : 'open-settings'}',
         );
+        final permissionL10n = _resolveL10n();
         _reportPasteFailure(
           outcome: PasteOutcome.permissionMissing,
           kind: AttentionKind.pasteBlockedPermission,
           title: staleGrant
-              ? 'WhisPaste: Neustart nötig'
-              : 'WhisPaste: Auto-Einfügen blockiert',
+              ? permissionL10n.pasteNotificationRestartNeededTitle
+              : permissionL10n.pasteNotificationPermissionBlockedTitle,
           body: staleGrant
-              ? 'Die Berechtigung wurde erteilt, aber WhisPaste läuft noch mit dem alten Stand. Klicke hier, um WhisPaste neu zu starten.'
+              ? permissionL10n.pasteNotificationRestartNeededBody
               : resetEntryFirst
-              ? 'WhisPaste braucht die Berechtigung, Text in andere Apps einzufügen — macOS nennt sie „Bedienungshilfen“. Klicke hier: WhisPaste räumt einen möglicherweise veralteten Eintrag weg und lässt macOS neu fragen.'
-              : 'WhisPaste braucht die Berechtigung, Text in andere Apps einzufügen — macOS nennt sie „Bedienungshilfen“. Klicke hier oder das Tray-Icon, um die Systemeinstellungen zu öffnen.',
+              ? permissionL10n.pasteNotificationPermissionResetEntryBody
+              : permissionL10n.pasteNotificationPermissionOpenSettingsBody,
           trayLabel: staleGrant
-              ? 'Auto-Einfügen blockiert — Neustart nötig'
-              : 'Auto-Einfügen blockiert — Systemeinstellungen öffnen',
+              ? permissionL10n.pasteNotificationRestartNeededTray
+              : permissionL10n.pasteNotificationPermissionBlockedTray,
           // The arms above pick the *wording*; the click itself re-resolves
           // the arm when it fires. A notification can sit unread and the tray
           // entry waits indefinitely, so the state at click time is the one
@@ -2244,27 +2247,46 @@ class RecordingOrchestrator extends Notifier<void> {
           '(Windows UIPI). Restart WhisPaste as an administrator to paste '
           'into that window.',
         );
+        final elevationL10n = _resolveL10n();
         _reportPasteFailure(
           outcome: PasteOutcome.elevationBlocked,
           kind: AttentionKind.pasteBlockedElevation,
-          title: 'WhisPaste: Auto-Einfügen blockiert',
-          body:
-              'Die Ziel-App läuft mit Administratorrechten. Starte WhisPaste ebenfalls als Administrator, um dort einzufügen.',
-          trayLabel: 'Auto-Einfügen blockiert — Administrator nötig',
+          title: elevationL10n.pasteNotificationElevationBlockedTitle,
+          body: elevationL10n.pasteNotificationElevationBlockedBody,
+          trayLabel: elevationL10n.pasteNotificationElevationBlockedTray,
         );
         return false;
       case PasteOutcome.failed:
         _log.warning('Paste failed: native bridge reported an unknown error');
+        final failedL10n = _resolveL10n();
         _reportPasteFailure(
           outcome: PasteOutcome.failed,
           kind: AttentionKind.pasteFailedUnknown,
-          title: 'WhisPaste: Auto-Einfügen fehlgeschlagen',
-          body:
-              'Das System hat den Einfüge-Vorgang abgelehnt. Der Text liegt in der Zwischenablage — füge ihn manuell mit ⌘V / Strg+V ein.',
-          trayLabel: 'Auto-Einfügen fehlgeschlagen',
+          title: failedL10n.pasteNotificationFailedTitle,
+          body: failedL10n.pasteNotificationFailedBody,
+          trayLabel: failedL10n.pasteNotificationFailedTray,
         );
         return false;
     }
+  }
+
+  /// Resolves the app's own persisted language setting (`AppSettings.locale`,
+  /// Settings → Language) for the native OS notification / tray text
+  /// [_reportPasteFailure] builds — not the raw OS locale, mirroring the fix
+  /// for `FloatingOverlayService._resolveL10n()` (issue
+  /// `overlay-status-l10n/01`, root cause 1). Falls back to English if the
+  /// setting is missing or names an unsupported locale — English is always
+  /// resolvable ([lookupL10n]'s template locale), so this never throws.
+  L10n _resolveL10n() {
+    final localeCode = ref.read(settingsProvider).value?.locale;
+    if (localeCode != null) {
+      try {
+        return lookupL10n(Locale(localeCode));
+      } catch (e) {
+        _log.debug('Unsupported locale "$localeCode", falling back to en: $e');
+      }
+    }
+    return lookupL10n(const Locale('en'));
   }
 
   void _reportPasteFailure({

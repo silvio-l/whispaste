@@ -514,6 +514,67 @@ class L10nDe extends L10n {
   String get pasteFailureOpenSettings => 'Einstellungen öffnen';
 
   @override
+  String get pasteNotificationNoTargetTitle =>
+      'WhisPaste: Auto-Einfügen übersprungen';
+
+  @override
+  String get pasteNotificationNoTargetBody =>
+      'Keine Ziel-App erkannt. Fokussiere zuerst die Ziel-App, dann starte die Aufnahme. Der Text liegt in der Zwischenablage.';
+
+  @override
+  String get pasteNotificationNoTargetTray => 'Auto-Einfügen: Ziel-App fehlte';
+
+  @override
+  String get pasteNotificationRestartNeededTitle => 'WhisPaste: Neustart nötig';
+
+  @override
+  String get pasteNotificationRestartNeededBody =>
+      'Die Berechtigung wurde erteilt, aber WhisPaste läuft noch mit dem alten Stand. Klicke hier, um WhisPaste neu zu starten.';
+
+  @override
+  String get pasteNotificationRestartNeededTray =>
+      'Auto-Einfügen blockiert — Neustart nötig';
+
+  @override
+  String get pasteNotificationPermissionBlockedTitle =>
+      'WhisPaste: Auto-Einfügen blockiert';
+
+  @override
+  String get pasteNotificationPermissionResetEntryBody =>
+      'WhisPaste braucht die Berechtigung, Text in andere Apps einzufügen — macOS nennt sie „Bedienungshilfen“. Klicke hier: WhisPaste räumt einen möglicherweise veralteten Eintrag weg und lässt macOS neu fragen.';
+
+  @override
+  String get pasteNotificationPermissionOpenSettingsBody =>
+      'WhisPaste braucht die Berechtigung, Text in andere Apps einzufügen — macOS nennt sie „Bedienungshilfen“. Klicke hier oder das Tray-Icon, um die Systemeinstellungen zu öffnen.';
+
+  @override
+  String get pasteNotificationPermissionBlockedTray =>
+      'Auto-Einfügen blockiert — Systemeinstellungen öffnen';
+
+  @override
+  String get pasteNotificationElevationBlockedTitle =>
+      'WhisPaste: Auto-Einfügen blockiert';
+
+  @override
+  String get pasteNotificationElevationBlockedBody =>
+      'Die Ziel-App läuft mit Administratorrechten. Starte WhisPaste ebenfalls als Administrator, um dort einzufügen.';
+
+  @override
+  String get pasteNotificationElevationBlockedTray =>
+      'Auto-Einfügen blockiert — Administrator nötig';
+
+  @override
+  String get pasteNotificationFailedTitle =>
+      'WhisPaste: Auto-Einfügen fehlgeschlagen';
+
+  @override
+  String get pasteNotificationFailedBody =>
+      'Das System hat den Einfüge-Vorgang abgelehnt. Der Text liegt in der Zwischenablage — füge ihn manuell mit ⌘V / Strg+V ein.';
+
+  @override
+  String get pasteNotificationFailedTray => 'Auto-Einfügen fehlgeschlagen';
+
+  @override
   String get pasteCapabilityCheckTitle => 'Einen Moment…';
 
   @override

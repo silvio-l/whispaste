@@ -542,6 +542,65 @@ class L10nRu extends L10n {
   String get pasteFailureOpenSettings => 'Открыть настройки';
 
   @override
+  String get pasteNotificationNoTargetTitle => 'WhisPaste: Auto-Paste Skipped';
+
+  @override
+  String get pasteNotificationNoTargetBody =>
+      'No target app detected. Focus the destination app first, then start recording. The text is on the clipboard.';
+
+  @override
+  String get pasteNotificationNoTargetTray => 'Auto-Paste: Target App Missing';
+
+  @override
+  String get pasteNotificationRestartNeededTitle => 'WhisPaste: Restart Needed';
+
+  @override
+  String get pasteNotificationRestartNeededBody =>
+      'The permission was granted, but WhisPaste is still running the old state. Click here to restart WhisPaste.';
+
+  @override
+  String get pasteNotificationRestartNeededTray =>
+      'Auto-Paste Blocked — Restart Needed';
+
+  @override
+  String get pasteNotificationPermissionBlockedTitle =>
+      'WhisPaste: Auto-Paste Blocked';
+
+  @override
+  String get pasteNotificationPermissionResetEntryBody =>
+      'WhisPaste needs permission to insert text into other apps — macOS calls this permission \'Accessibility\'. Click here: WhisPaste will clear a possibly stale entry and let macOS ask again.';
+
+  @override
+  String get pasteNotificationPermissionOpenSettingsBody =>
+      'WhisPaste needs permission to insert text into other apps — macOS calls this permission \'Accessibility\'. Click here or the tray icon to open System Settings.';
+
+  @override
+  String get pasteNotificationPermissionBlockedTray =>
+      'Auto-Paste Blocked — Open System Settings';
+
+  @override
+  String get pasteNotificationElevationBlockedTitle =>
+      'WhisPaste: Auto-Paste Blocked';
+
+  @override
+  String get pasteNotificationElevationBlockedBody =>
+      'The target app is running with administrator rights. Restart WhisPaste as an administrator too, to paste into that app.';
+
+  @override
+  String get pasteNotificationElevationBlockedTray =>
+      'Auto-Paste Blocked — Administrator Needed';
+
+  @override
+  String get pasteNotificationFailedTitle => 'WhisPaste: Auto-Paste Failed';
+
+  @override
+  String get pasteNotificationFailedBody =>
+      'The system rejected the paste. The text is on the clipboard — paste it manually with ⌘V / Ctrl+V.';
+
+  @override
+  String get pasteNotificationFailedTray => 'Auto-Paste Failed';
+
+  @override
   String get pasteCapabilityCheckTitle => 'Минуточку…';
 
   @override
