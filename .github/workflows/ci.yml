@@ -42,6 +42,25 @@ jobs:
           fi
           echo 'No secrets found'
 
+      # Enforces the logging concept documented in LOGGING.md: all app-level
+      # logging must go through AppLogger (lib/core/logging/app_logger.dart)
+      # so it gets file persistence, rotation/redaction, and Sentry
+      # breadcrumbs. Bare dev.log()/debugPrint() bypass all of that.
+      # `avoid_print` (analysis_options.yaml) already covers print(); this
+      # closes the same gap for the two APIs it doesn't reach.
+      - name: Logging gate — no dev.log/debugPrint outside AppLogger
+        run: |
+          echo 'Checking for logging calls that bypass AppLogger...'
+          ALLOWED='lib/core/logging/app_logger.dart|lib/core/logging/app_monitoring.dart|lib/core/logging/crash_reporter.dart|lib/services/floating_overlay/overlay_render_channel.dart|_render_entrypoint\.dart'
+          MATCHES=$(grep -rEln 'dev\.log\(|debugPrint\(' --include='*.dart' lib \
+            | grep -Ev "$ALLOWED" || true)
+          if [ -n "$MATCHES" ]; then
+            echo "$MATCHES"
+            echo "::error::Found dev.log()/debugPrint() outside the AppLogger allowlist. Use AppLogger instead (see LOGGING.md)."
+            exit 1
+          fi
+          echo 'No stray dev.log/debugPrint calls found'
+
   flutter-app:
     name: Flutter App (Windows)
     runs-on: windows-latest

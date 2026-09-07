@@ -16,7 +16,6 @@
 library;
 
 import 'dart:convert';
-import 'dart:developer' as dev;
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -942,7 +941,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
           ),
         );
         await db.writeAppSettings(settings.toStorageMap());
-        dev.log('Sound mute migration: soundVolume set to 0', name: 'Settings');
+        _log.info('Sound mute migration: soundVolume set to 0');
       }
 
       // One-time migration (onboarding-revisions ticket 01): grandfathering.
@@ -979,10 +978,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
           try {
             await db.writeAppSettings(stamped.toStorageMap());
             settings = stamped;
-            dev.log(
-              'Onboarding content version grandfathered to $target',
-              name: 'Settings',
-            );
+            _log.info('Onboarding content version grandfathered to $target');
           } catch (e) {
             // Persist failed — stay at 0 in memory too, so this session and
             // disk agree. The condition above only matches while the stamp
@@ -1001,7 +997,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
         settings = migrated;
         // Persist immediately so migration never re-runs.
         await db.writeAppSettings(settings.toStorageMap());
-        dev.log('Migrated Go config persisted to SQLite', name: 'Settings');
+        _log.info('Migrated Go config persisted to SQLite');
       } else {
         settings = AppSettings.defaults;
       }
@@ -1067,10 +1063,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
         await secureStore.deleteKey(secureKey);
       }
     } catch (e) {
-      dev.log(
-        'resetToDefaults: secure store cleanup failed: $e',
-        name: 'Settings',
-      );
+      _log.warning('resetToDefaults: secure store cleanup failed: $e', e);
     }
     final db = ref.read(historyDatabaseProvider);
     await db.resetAppSettings();
@@ -1100,7 +1093,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
     try {
       await db.deleteAllData();
     } catch (e) {
-      dev.log('Factory reset: deleteAllData failed: $e', name: 'Settings');
+      _log.error('Factory reset: deleteAllData failed: $e', e);
     }
 
     // 3. Delete downloaded models directory.
@@ -1126,10 +1119,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
         await secureStore.deleteKey(secureKey);
       }
     } catch (e) {
-      dev.log(
-        'Factory reset: secure store cleanup failed: $e',
-        name: 'Settings',
-      );
+      _log.warning('Factory reset: secure store cleanup failed: $e', e);
     }
   }
 
@@ -1161,7 +1151,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
     // Temp WAV files.
     _cleanupTempWavFiles();
 
-    dev.log('Factory reset complete', name: 'Settings');
+    _log.info('Factory reset complete');
   }
 
   static void _tryDeleteDir(String path) {
@@ -1169,10 +1159,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
       final dir = Directory(path);
       if (dir.existsSync()) dir.deleteSync(recursive: true);
     } catch (e) {
-      dev.log(
-        'Factory reset: failed to delete dir $path: $e',
-        name: 'Settings',
-      );
+      _log.warning('Factory reset: failed to delete dir $path: $e', e);
     }
   }
 
@@ -1181,10 +1168,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
       final file = File(path);
       if (file.existsSync()) file.deleteSync();
     } catch (e) {
-      dev.log(
-        'Factory reset: failed to delete file $path: $e',
-        name: 'Settings',
-      );
+      _log.warning('Factory reset: failed to delete file $path: $e', e);
     }
   }
 
@@ -1200,7 +1184,7 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
         }
       }
     } catch (e) {
-      dev.log('Factory reset: failed to clean temp WAVs: $e', name: 'Settings');
+      _log.warning('Factory reset: failed to clean temp WAVs: $e', e);
     }
   }
 
@@ -1216,22 +1200,16 @@ class SettingsNotifier extends AsyncNotifier<AppSettings> {
       final contents = file.readAsStringSync();
       final raw = jsonDecode(contents);
       if (raw is! Map<String, dynamic>) {
-        dev.log(
-          'Go config JSON is not an object, skipping migration',
-          name: 'Settings',
-        );
+        _log.warning('Go config JSON is not an object, skipping migration');
         return null;
       }
-      dev.log('Migrating Go config.json → Flutter settings', name: 'Settings');
+      _log.info('Migrating Go config.json → Flutter settings');
       return AppSettings.fromGoConfig(raw);
     } catch (e) {
       // Catches StateError (missing APPDATA), FormatException (bad JSON),
       // FileSystemException (I/O failure), TypeError (unexpected JSON shape),
       // and anything else.  Migration is best-effort — never crash the app.
-      dev.log(
-        'Go config migration failed, using defaults: $e',
-        name: 'Settings',
-      );
+      _log.warning('Go config migration failed, using defaults: $e', e);
       return null;
     }
   }

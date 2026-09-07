@@ -89,12 +89,20 @@ class _StaticParakeetDownload extends ParakeetDownloadNotifier {
 
 /// Settings of someone who finished setup a long time ago and got half-way
 /// through the flow once, back when they did.
+///
+/// Carries an already-generated `cohortPseudonymSalt`, as any real returning
+/// user with usage stats on would by now (`telemetryProvider` backfills it
+/// lazily on first dispatch) — without it, the very first `_trackStep` call
+/// in these tests triggers that one-time backfill write itself, which has
+/// nothing to do with the review flow under test and would corrupt the
+/// "review touches no settings" assertions below.
 AppSettings _returningUser() => AppSettings.defaults.copyWithSections(
   onboarding: const OnboardingSettings(
     onboardingCompleted: true,
     onboardingCurrentStep: 3,
     onboardingFlowVersion: kOnboardingFlowVersion,
   ),
+  privacy: const PrivacySettings(cohortPseudonymSalt: 'test-cohort-salt'),
 );
 
 Future<_FakeSettingsNotifier> _pumpReview(

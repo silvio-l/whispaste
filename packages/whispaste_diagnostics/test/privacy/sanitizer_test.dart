@@ -30,6 +30,33 @@ void main() {
     });
   });
 
+  group('redactSensitive', () {
+    test('redacts api key pattern, keeps surrounding text', () {
+      final result = redactSensitive('config: api_key=abc123xyz loaded');
+      expect(result, 'config: <redacted> loaded');
+    });
+
+    test('redacts bearer token', () {
+      final result = redactSensitive('Authorization: Bearer sk-abc123');
+      expect(result, contains('<redacted>'));
+      expect(result, isNot(contains('sk-abc123')));
+    });
+
+    test('redacts OpenAI-style key', () {
+      final result = redactSensitive('key=sk-abcdefghij1234567 sent');
+      expect(result, isNot(contains('sk-abcdefghij1234567')));
+    });
+
+    test('leaves normal text unchanged', () {
+      const input = 'Normal log message without secrets';
+      expect(redactSensitive(input), input);
+    });
+
+    test('handles empty string', () {
+      expect(redactSensitive(''), '');
+    });
+  });
+
   group('sanitizePaths', () {
     test('returns input unchanged when no env vars match', () {
       // In a test environment, neither USERPROFILE/HOME nor APPDATA will match

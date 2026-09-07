@@ -82,6 +82,13 @@ class _StaticParakeetDownload extends ParakeetDownloadNotifier {
 /// `onboardingRevisionDue` requires: onboarding long completed, seen content
 /// version below target, flow version current (so no unrelated legacy-index
 /// migration fires and confuses the assertions below).
+///
+/// Carries an already-generated `cohortPseudonymSalt`, as any real
+/// long-completed user with usage stats on would by now (`telemetryProvider`
+/// backfills it lazily on first dispatch) — without it, the very first
+/// `_trackStep` call in these tests triggers that one-time backfill write
+/// itself, which has nothing to do with the revision run under test and
+/// would break the "every other setting untouched" assertions below.
 AppSettings _staleUser({int seenContentVersion = 1}) =>
     AppSettings.defaults.copyWithSections(
       onboarding: OnboardingSettings(
@@ -89,6 +96,7 @@ AppSettings _staleUser({int seenContentVersion = 1}) =>
         onboardingFlowVersion: kOnboardingFlowVersion,
         onboardingContentVersion: seenContentVersion,
       ),
+      privacy: const PrivacySettings(cohortPseudonymSalt: 'test-cohort-salt'),
     );
 
 OnboardingRevisionEntry _entry(int version) => OnboardingRevisionEntry(

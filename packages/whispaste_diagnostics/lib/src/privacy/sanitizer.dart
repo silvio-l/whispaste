@@ -27,6 +27,20 @@ final List<RegExp> sensitivePatterns = [
 bool containsSensitiveData(String s) =>
     sensitivePatterns.any((p) => p.hasMatch(s));
 
+/// Replaces sensitive substrings (API keys, tokens, passwords, …) in [s]
+/// with `<redacted>`, keeping the surrounding message intact.
+///
+/// Unlike [containsSensitiveData] (used to drop whole lines when reading
+/// existing logs), this is meant for use at write time so secrets never
+/// reach disk in the first place.
+String redactSensitive(String s) {
+  var result = s;
+  for (final pattern in sensitivePatterns) {
+    result = result.replaceAll(pattern, '<redacted>');
+  }
+  return result;
+}
+
 /// Replaces user-specific path segments with placeholders.
 ///
 /// Substitutions (applied in this order):
