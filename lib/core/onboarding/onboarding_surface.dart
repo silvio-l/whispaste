@@ -11,10 +11,42 @@
 /// one.
 library;
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/settings_provider.dart';
 import 'onboarding_revision.dart';
+
+/// Schedules [onCheck] once after the first mounted frame, passing whether
+/// onboarding was already completed in a previous session. Shared by
+/// `WpFeatureSpotlightWatcher` and `WpStoreThankYouWatcher` — both need this
+/// exact "handle returning users" check on first mount.
+void runOnboardingCheckOnFirstMount(
+  WidgetRef ref,
+  bool Function() mounted,
+  void Function(bool onboardingCompleted) onCheck,
+) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!mounted()) return;
+    final onboarded =
+        ref.read(settingsProvider).value?.onboarding.onboardingCompleted ??
+        false;
+    onCheck(onboarded);
+  });
+}
+
+/// Watches for the moment onboarding completes during the current session
+/// (first-run users) and calls [onCompleted] exactly once when it flips to
+/// `true`. Shared by `WpFeatureSpotlightWatcher` and `WpStoreThankYouWatcher`.
+void watchOnboardingCompletion(WidgetRef ref, void Function() onCompleted) {
+  ref.listen<AsyncValue<AppSettings>>(settingsProvider, (prev, next) {
+    final wasCompleted = prev?.value?.onboarding.onboardingCompleted ?? false;
+    final isCompleted = next.value?.onboarding.onboardingCompleted ?? false;
+    if (!wasCompleted && isCompleted) {
+      onCompleted();
+    }
+  });
+}
 
 /// Whether the five-step onboarding flow is currently in front of the app —
 /// for any of the three reasons it can be: first-run onboarding is still in

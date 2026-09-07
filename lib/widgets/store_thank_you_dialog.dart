@@ -75,15 +75,7 @@ class _WpStoreThankYouWatcherState
   @override
   void initState() {
     super.initState();
-    // Check on first mount — handles returning users whose onboarding was
-    // already completed in a previous session.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final onboarded =
-          ref.read(settingsProvider).value?.onboarding.onboardingCompleted ??
-          false;
-      _triggerCheck(onboarded);
-    });
+    runOnboardingCheckOnFirstMount(ref, () => mounted, _triggerCheck);
   }
 
   @override
@@ -185,13 +177,7 @@ class _WpStoreThankYouWatcherState
   @override
   Widget build(BuildContext context) {
     // Watch for onboarding completion during the current session (first-run).
-    ref.listen<AsyncValue<AppSettings>>(settingsProvider, (prev, next) {
-      final wasCompleted = prev?.value?.onboarding.onboardingCompleted ?? false;
-      final isCompleted = next.value?.onboarding.onboardingCompleted ?? false;
-      if (!wasCompleted && isCompleted) {
-        _triggerCheck(true);
-      }
-    });
+    watchOnboardingCompletion(ref, () => _triggerCheck(true));
 
     // Watch for the show signal emitted by the notifier.
     ref.listen<StoreThankYouState>(storeThankYouProvider, (_, next) {
