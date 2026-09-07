@@ -99,16 +99,21 @@ as the README.
 Find prose, examples, or claims that CONTRADICT, UNDERSTATE, or OMIT what the
 product actually ships now — the semantic staleness a structural linter cannot
 see (e.g. a feature list still naming a removed STT provider, a version label
-frozen at an old release, an App Store claim for macOS when only a GitHub DMG ships).
+frozen at an old release, a claim that a channel doesn't exist when it does).
 
 Rules of judgement:
 - Anything a doc presents as live/available/now that contradicts the ground truth
   below is drift. Anything in the ground truth not reflected in user-facing docs is drift.
-- WhisPaste has NO Mac App Store listing (macOS = GitHub arm64 DMG). Windows primary
-  channel is the Microsoft Store. Linux has no binary artefact yet.
+- macOS ships both a GitHub arm64 DMG (Developer-ID, direct download) AND a Mac
+  App Store listing (sandboxed build, submitted via a local fastlane lane, no
+  CI job). Windows primary channel is the Microsoft Store, plus GitHub
+  installer/MSIX, Scoop and winget. Linux ships GitHub AppImage/.deb/tar.gz,
+  plus Flatpak, Snap and a Homebrew cask.
 - Removed / never-shipped (must NOT appear as current features): Groq STT,
-  Anthropic STT, Gemini STT, Smart Mode, command palette. Current cloud STT
-  providers: OpenAI + Deepgram; plus on-device (Whisper).
+  Anthropic STT, Gemini STT, command palette. Current cloud STT providers:
+  OpenAI + Deepgram; plus on-device (Whisper). Smart Mode (on-device AI
+  post-processing: cleanup/shorten/translate) IS a current, actively
+  maintained feature — do NOT flag it as removed.
 - Use the canonical brand language below; flag off-vocabulary product framing
   (e.g. calling WhisPaste a "dictation tool" / "voice assistant").
 - Version numbers must be consistent everywhere they appear.
