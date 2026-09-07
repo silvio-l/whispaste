@@ -18,12 +18,12 @@
 library;
 
 import 'dart:async';
-import 'dart:developer' as dev;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/data/database.dart';
+import '../core/logging/app_logger.dart';
 import 'review_prompt_service.dart';
 import 'shared_prefs_safe_read.dart';
 
@@ -131,6 +131,8 @@ const _coordinationWindowDays = 30;
 /// whether conditions are met. When [state.shouldShowPrompt] becomes `true`,
 /// show the support dialog and call [markResolved] afterward.
 class SupportPromptNotifier extends Notifier<SupportPromptState> {
+  static final _log = AppLogger('SupportPrompt');
+
   @override
   SupportPromptState build() => const SupportPromptState();
 
@@ -206,10 +208,7 @@ class SupportPromptNotifier extends Notifier<SupportPromptState> {
                 _postLinkQuietDays) {
           return;
         }
-        dev.log(
-          'Support prompt: recurring follow-up eligible (recordings=$count)',
-          name: 'SupportPrompt',
-        );
+        _log.info('recurring follow-up eligible (recordings=$count)');
         state = state.copyWith(
           shouldShowPrompt: true,
           kind: SupportPromptKind.recurringFollowUp,
@@ -224,16 +223,13 @@ class SupportPromptNotifier extends Notifier<SupportPromptState> {
         return;
       }
 
-      dev.log(
-        'Support prompt: conditions met (recordings=$count)',
-        name: 'SupportPrompt',
-      );
+      _log.info('conditions met (recordings=$count)');
       state = state.copyWith(
         shouldShowPrompt: true,
         kind: SupportPromptKind.initial,
       );
     } on Exception catch (e) {
-      dev.log('Support prompt check failed: $e', name: 'SupportPrompt');
+      _log.error('check failed: $e', e);
     }
   }
 
@@ -254,7 +250,7 @@ class SupportPromptNotifier extends Notifier<SupportPromptState> {
         await prefs.setInt(_keySnoozeMs, DateTime.now().millisecondsSinceEpoch);
       }
     } on Exception catch (e) {
-      dev.log('Support prompt dismiss failed: $e', name: 'SupportPrompt');
+      _log.error('dismiss failed: $e', e);
     } finally {
       state = state.copyWith(shouldShowPrompt: false);
     }
@@ -282,10 +278,7 @@ class SupportPromptNotifier extends Notifier<SupportPromptState> {
         );
       }
     } on Exception catch (e) {
-      dev.log(
-        'Support prompt markLinkOpened failed: $e',
-        name: 'SupportPrompt',
-      );
+      _log.error('markLinkOpened failed: $e', e);
     } finally {
       state = state.copyWith(shouldShowPrompt: false);
     }

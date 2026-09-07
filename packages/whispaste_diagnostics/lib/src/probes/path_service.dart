@@ -10,6 +10,12 @@ import 'dart:io';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 
+/// Override the app-data directory for testing. When non-null,
+/// [appDataDir] returns this value instead of the real platform path,
+/// isolating tests (e.g. log rotation/redaction) from the host file system.
+@visibleForTesting
+String? appDataDirOverride;
+
 /// Override the STT directory for testing. When non-null, [sttDir] returns
 /// this value instead of the real AppData path, isolating tests from the
 /// host file system.
@@ -70,6 +76,8 @@ String? resolveModelFilename(String modelId) {
 /// - macOS: `~/Library/Application Support/WhisPaste`
 /// - Linux: `$XDG_CONFIG_HOME/whispaste` or `~/.config/whispaste`
 String appDataDir() {
+  final override = appDataDirOverride;
+  if (override != null) return override;
   if (Platform.isWindows) {
     final appData = Platform.environment['APPDATA'];
     if (appData == null || appData.isEmpty) {

@@ -6,13 +6,13 @@
 library;
 
 import 'dart:async';
-import 'dart:developer' as dev;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/app_info.dart' as app_info;
 import '../core/data/database.dart';
+import '../core/logging/app_logger.dart';
 import 'deploy_channel_service.dart';
 import 'shared_prefs_safe_read.dart';
 
@@ -71,6 +71,8 @@ const _notNowDaysBetweenPrompts = 60;
 /// whether conditions are met. When [state.shouldShowPrompt] becomes `true`,
 /// show [ReviewPromptDialog] and call [markShown] or [dismiss] afterward.
 class ReviewPromptNotifier extends Notifier<ReviewPromptState> {
+  static final _log = AppLogger('ReviewPrompt');
+
   @override
   ReviewPromptState build() {
     final channel = ref.read(deployChannelProvider);
@@ -111,10 +113,9 @@ class ReviewPromptNotifier extends Notifier<ReviewPromptState> {
       final lastShownVersion = prefs.getString(_keyLastShownAppVersion) ?? '';
       if (version != lastShownVersion && lastShownVersion.isNotEmpty) {
         await prefs.setString(_keyLastShownAppVersion, version);
-        dev.log(
-          'Review prompt: version upgrade re-prompt '
+        _log.info(
+          'version upgrade re-prompt '
           '($lastShownVersion → $version, recordings=$count)',
-          name: 'ReviewPrompt',
         );
         state = state.copyWith(shouldShowPrompt: true);
         return;
@@ -144,13 +145,10 @@ class ReviewPromptNotifier extends Notifier<ReviewPromptState> {
       }
 
       await prefs.setString(_keyLastShownAppVersion, version);
-      dev.log(
-        'Review prompt: conditions met (recordings=$count)',
-        name: 'ReviewPrompt',
-      );
+      _log.info('conditions met (recordings=$count)');
       state = state.copyWith(shouldShowPrompt: true);
     } on Exception catch (e) {
-      dev.log('Review prompt check failed: $e', name: 'ReviewPrompt');
+      _log.error('check failed: $e', e);
     }
   }
 
@@ -167,7 +165,7 @@ class ReviewPromptNotifier extends Notifier<ReviewPromptState> {
       );
       await prefs.setInt(_keyShownCount, count);
     } on Exception catch (e) {
-      dev.log('Review prompt markShown failed: $e', name: 'ReviewPrompt');
+      _log.error('markShown failed: $e', e);
     } finally {
       state = state.copyWith(shouldShowPrompt: false);
     }
@@ -194,7 +192,7 @@ class ReviewPromptNotifier extends Notifier<ReviewPromptState> {
         );
       }
     } on Exception catch (e) {
-      dev.log('Review prompt dismiss failed: $e', name: 'ReviewPrompt');
+      _log.error('dismiss failed: $e', e);
     } finally {
       state = state.copyWith(shouldShowPrompt: false);
     }

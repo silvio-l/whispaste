@@ -7,6 +7,7 @@ library;
 
 export 'package:whispaste_diagnostics/whispaste_diagnostics.dart'
     show
+        appDataDirOverride,
         sttDirOverride,
         retainedAudioDirOverride,
         modelFilenames,

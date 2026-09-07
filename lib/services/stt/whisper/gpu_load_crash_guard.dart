@@ -40,7 +40,6 @@
 /// `recording_behavior.dart`.
 library;
 
-import 'dart:developer' as dev;
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -48,6 +47,7 @@ import 'package:path/path.dart' as p;
 
 import '../../../core/config/settings_enums.dart' show GpuAcceleration;
 import '../../../core/config/settings_provider.dart';
+import '../../../core/logging/app_logger.dart';
 import '../../../core/logging/crash_fingerprints.dart';
 import '../../../core/logging/crash_reporter.dart';
 import '../../path_service.dart';
@@ -56,6 +56,8 @@ import '../../path_service.dart';
 ///
 /// Pure I/O, no Flutter/Riverpod dependency, so it is directly constructible
 /// in unit tests with an injected [dataDir] — no fake filesystem needed.
+final _log = AppLogger('GpuLoadCrashGuard');
+
 class GpuLoadCrashGuard {
   GpuLoadCrashGuard({String? dataDir}) : _dataDir = dataDir ?? appDataDir();
 
@@ -81,10 +83,7 @@ class GpuLoadCrashGuard {
     } catch (e) {
       // Best-effort: if the marker can't be written, this launch simply
       // loses crash-loop protection — never let this block the real load.
-      dev.log(
-        'Failed to write GPU-load crash marker: $e',
-        name: 'GpuLoadCrashGuard',
-      );
+      _log.error('Failed to write GPU-load crash marker: $e', e);
     }
   }
 
@@ -95,10 +94,7 @@ class GpuLoadCrashGuard {
       if (_markerFile.existsSync()) _markerFile.deleteSync();
     } catch (e) {
       // Best-effort, see markAttempt.
-      dev.log(
-        'Failed to clear GPU-load crash marker: $e',
-        name: 'GpuLoadCrashGuard',
-      );
+      _log.error('Failed to clear GPU-load crash marker: $e', e);
     }
   }
 
@@ -110,10 +106,7 @@ class GpuLoadCrashGuard {
       _noticeFile.parent.createSync(recursive: true);
       _noticeFile.writeAsStringSync('');
     } catch (e) {
-      dev.log(
-        'Failed to write GPU-disabled notice marker: $e',
-        name: 'GpuLoadCrashGuard',
-      );
+      _log.error('Failed to write GPU-disabled notice marker: $e', e);
     }
   }
 
@@ -128,10 +121,7 @@ class GpuLoadCrashGuard {
       _noticeFile.deleteSync();
       return true;
     } catch (e) {
-      dev.log(
-        'Failed to consume GPU-disabled notice marker: $e',
-        name: 'GpuLoadCrashGuard',
-      );
+      _log.error('Failed to consume GPU-disabled notice marker: $e', e);
       return false;
     }
   }
@@ -143,10 +133,7 @@ class GpuLoadCrashGuard {
       if (!_strikesFile.existsSync()) return 0;
       return int.tryParse(_strikesFile.readAsStringSync().trim()) ?? 0;
     } catch (e) {
-      dev.log(
-        'Failed to read GPU-load crash streak: $e',
-        name: 'GpuLoadCrashGuard',
-      );
+      _log.error('Failed to read GPU-load crash streak: $e', e);
       return 0;
     }
   }
@@ -159,10 +146,7 @@ class GpuLoadCrashGuard {
       _strikesFile.parent.createSync(recursive: true);
       _strikesFile.writeAsStringSync('$next');
     } catch (e) {
-      dev.log(
-        'Failed to write GPU-load crash streak: $e',
-        name: 'GpuLoadCrashGuard',
-      );
+      _log.error('Failed to write GPU-load crash streak: $e', e);
     }
     return next;
   }
@@ -174,10 +158,7 @@ class GpuLoadCrashGuard {
     try {
       if (_strikesFile.existsSync()) _strikesFile.deleteSync();
     } catch (e) {
-      dev.log(
-        'Failed to reset GPU-load crash streak: $e',
-        name: 'GpuLoadCrashGuard',
-      );
+      _log.error('Failed to reset GPU-load crash streak: $e', e);
     }
   }
 }
