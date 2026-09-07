@@ -116,7 +116,8 @@ flutter build macos   --release --no-tree-shake-icons \
   <a href="https://ko-fi.com/silviol"><img src="https://img.shields.io/badge/Ko--fi-☕-ff5e5b?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-fi"></a>
 </p>
 
-Contributions welcome — fork, branch, PR. Licensed under [MIT](LICENSE).
+Contributions welcome — fork, branch, PR. See [CONTRIBUTING.md](CONTRIBUTING.md) and the
+[Code of Conduct](CODE_OF_CONDUCT.md). Licensed under [MIT](LICENSE).
 
 <p align="center">
   <sub>Made by <a href="https://github.com/silvio-l">Silvio Lindstedt</a></sub>
