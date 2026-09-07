@@ -2,6 +2,10 @@
 
 ## 1.2.73
 
+### New Features
+
+- **Export merkt sich das zuletzt gewählte Format.** Beim nächsten Export von Verlauf oder Notizen ist TXT/MD/CSV/JSON/DOCX bereits vorausgewählt, statt immer wieder auf die erste Option zurückzuspringen.
+
 ### Bug Fixes
 
 - **Store-Bewertungen auf der Website zeigen jetzt das echte Veröffentlichungsdatum** statt des Zeitpunkts, zu dem wir sie zuletzt synchronisiert haben.
