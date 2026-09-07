@@ -14,11 +14,15 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/l10n/generated/app_localizations.dart';
+import '../core/logging/app_logger.dart';
 import '../core/theme/colors.dart';
 import '../core/theme/tokens.dart';
 import '../features/history/data/export_service.dart';
+
+final _log = AppLogger('ExportFormatPicker');
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -152,6 +156,7 @@ class _ExportFormatPickerDialog extends StatefulWidget {
 }
 
 class _ExportFormatPickerDialogState extends State<_ExportFormatPickerDialog> {
+  static const _prefsKey = 'last_export_format_index';
   int _highlightedIndex = 0;
   late final FocusNode _focusNode;
 
@@ -159,6 +164,21 @@ class _ExportFormatPickerDialogState extends State<_ExportFormatPickerDialog> {
   void initState() {
     super.initState();
     _focusNode = FocusNode(debugLabel: 'ExportFormatPicker');
+    _loadLastFormat();
+  }
+
+  Future<void> _loadLastFormat() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final idx = prefs.getInt(_prefsKey);
+      if (idx != null && idx >= 0 && idx < widget.formats.length && mounted) {
+        setState(() => _highlightedIndex = idx);
+      }
+    } on Exception catch (e) {
+      // No prefs plugin registered (e.g. golden/screenshot harnesses that
+      // never mock it) — fail closed: keep the default first-option highlight.
+      _log.debug('Failed to load last export format (non-fatal): $e');
+    }
   }
 
   @override
@@ -168,6 +188,19 @@ class _ExportFormatPickerDialogState extends State<_ExportFormatPickerDialog> {
   }
 
   void _select(ExportFormat format) {
+    // Fire-and-forget save so the dialog closes instantly
+    SharedPreferences.getInstance()
+        .then((prefs) {
+          final idx = widget.formats.indexOf(format);
+          if (idx >= 0) {
+            prefs.setInt(_prefsKey, idx);
+          }
+        })
+        .catchError((Object e) {
+          // Non-fatal — the choice just won't be remembered this run.
+          _log.debug('Failed to persist last export format (non-fatal): $e');
+        });
+
     Navigator.of(context).pop<ExportFormat>(format);
   }
 
