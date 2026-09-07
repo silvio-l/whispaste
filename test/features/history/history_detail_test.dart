@@ -122,6 +122,29 @@ void main() {
       expect(dbEntry!.title, 'Great, thanks for the quick turnaround on this.');
     });
 
+    // Clearing the transcript entirely derives an empty title; keep the
+    // last non-empty title instead of showing an untitled/blank row.
+    test(
+      'keeps the previous derived title when the new content is empty',
+      () async {
+        final notifier = await loadNotifier();
+        final titleBefore = container
+            .read(historyDetailProvider(entryId))
+            .value!
+            .entry
+            .title;
+
+        await notifier.updateContent('   ');
+
+        final state = container.read(historyDetailProvider(entryId));
+        expect(state.value!.entry.title, titleBefore);
+        expect(state.value!.entry.content, '   ');
+
+        final dbEntry = await db.getEntry(entryId);
+        expect(dbEntry!.title, titleBefore);
+      },
+    );
+
     test(
       'leaves a manually-renamed title untouched when the content changes',
       () async {

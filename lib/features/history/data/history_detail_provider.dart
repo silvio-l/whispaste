@@ -119,6 +119,7 @@ class HistoryDetailNotifier extends AsyncNotifier<HistoryDetailState> {
   Future<void> updateContent(String newContent) async {
     final current = state.asData?.value;
     if (current == null) return;
+    final derivedTitle = deriveHistoryTitle(newContent);
     await _db.updateEntry(
       _entryId,
       HistoryEntriesCompanion(
@@ -129,10 +130,12 @@ class HistoryDetailNotifier extends AsyncNotifier<HistoryDetailState> {
         // [updateTitle]). Recompute it on every content save so editing a
         // transcript's body doesn't leave the list row / detail-header
         // title stuck on the pre-edit text (issue 02) — but never overwrite
-        // a title the user chose on purpose.
-        title: current.entry.titleEdited
+        // a title the user chose on purpose, and never blank it out: if the
+        // edit clears the transcript entirely, keep the last non-empty
+        // title rather than showing an untitled/empty row.
+        title: current.entry.titleEdited || derivedTitle.isEmpty
             ? const Value.absent()
-            : Value(deriveHistoryTitle(newContent)),
+            : Value(derivedTitle),
       ),
     );
     state = AsyncValue.data(
