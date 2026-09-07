@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.74
+
+### New Features
+
+- **Notizen: neue „Duplizieren"-Aktion direkt in der Symbolleiste des Notiz-Editors**, gleichrangig neben Kopieren und Exportieren.
+
+### Bug Fixes
+
+- **Smart Mode „On-Device" (lokale KI-Nachbearbeitung) funktionierte unter Windows in ausgelieferten Builds nie wirklich** — die dafür nötigen Dateien wurden nie mit dem Windows-Build ausgeliefert. Ab sofort behoben.
+- **Die Diagnose meldete unter Windows fälschlich fehlende Spracherkennungs-Dateien**, obwohl die Installation vollständig und funktionsfähig war.
+- **Fenstersteuerung in der Titelleiste** (Minimieren/Maximieren/Schließen) ist jetzt vollständig per Tastatur bedienbar und für Screenreader zugänglich.
+
 ## 1.2.73
 
 ### New Features
