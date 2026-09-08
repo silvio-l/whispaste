@@ -1,0 +1,24 @@
+<?xml version="1.0" standalone="yes"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>WhisPaste</title>
+    <link>https://github.com/whispaste/whispaste/releases/tag/1.2.76</link>
+    <description>Most recent WhisPaste releases</description>
+    <language>en</language>
+    <item>
+      <title>Version 1.2.76</title>
+      <pubDate>Tue, 08 Sep 2026 11:25:58 +0000</pubDate>
+      <sparkle:version>1.2.76</sparkle:version>
+      <sparkle:shortVersionString>1.2.76</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>11.0</sparkle:minimumSystemVersion>
+      <enclosure url="https://github.com/whispaste/whispaste/releases/download/v1.2.76/WhisPaste-macos-arm64.dmg" sparkle:edSignature="cCWNEzTbfWaL28hoDdY7K94DWDpF4cFg8IlXGpWmbx1qllK5zZ/LMz9MFH0yHJWk2koeVbAo5CCB2cly2SiVDQ==" length="64698522" type="application/octet-stream" sparkle:os="macos"/>
+    </item>
+    <item>
+      <title>Version 1.2.76</title>
+      <pubDate>Tue, 08 Sep 2026 11:25:58 +0000</pubDate>
+      <sparkle:version>1.2.76.44</sparkle:version>
+      <sparkle:shortVersionString>1.2.76</sparkle:shortVersionString>
+      <enclosure url="https://github.com/whispaste/whispaste/releases/download/v1.2.76/WhisPaste-Setup.exe" sparkle:edSignature="OJZzBLwZBfqY559xv5wpLHqQGq1MCxnJ6BtmdPfnKYw5OQx2QWeeBx9o01kvhi3d4vCU6+OG4qyoNl3jcngmAQ==" length="41913558" type="application/octet-stream" sparkle:os="windows"/>
+    </item>
+  </channel>
+</rss>
