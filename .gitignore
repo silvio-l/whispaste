@@ -141,6 +141,7 @@ scripts/*
 !scripts/docs-attest.sh
 !scripts/docs-drift.sh
 !scripts/probe-packaging-validate.sh
+!scripts/check-workflow-hygiene.sh
 !scripts/macos-selfsign.sh
 !scripts/macos-selfsign-export-secret.sh
 !scripts/generate_appcast.sh

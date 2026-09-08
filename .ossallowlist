@@ -91,6 +91,7 @@ supabase/
 scripts/GITHUB-SECRETS-SETUP.md
 scripts/docs-attest.sh
 scripts/docs-drift.sh
+scripts/check-workflow-hygiene.sh
 scripts/extract-cumulative-changelog.mjs
 scripts/generate-release-notes.mjs
 scripts/generate-screenshots.py

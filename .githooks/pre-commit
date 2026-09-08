@@ -233,6 +233,93 @@ if [ -n "$REGISTRANT_STAGED" ] && command -v python3 >/dev/null 2>&1; then
   git add "$ROOT/macos/Flutter/GeneratedPluginRegistrant.swift"
 fi
 
+# ── 3b. Executable-Bit auf Shell-Skripten ────────────────────────────
+# Dieses Repo hat `core.fileMode=false`. Konsequenz: ein `chmod +x` ist für
+# Git UNSICHTBAR — der Index behält 100644, `git status` zeigt nichts, und der
+# Fehler fällt erst auf einem Linux-/macOS-Runner auf, der das Skript direkt
+# ausführt. Genau so sind Release-Run 30342725883 (strip_mas_incompatible_
+# frameworks.sh: Permission denied) und 30490423191 (embed_libllama.sh) rot
+# geworden — und schlimmer: derselbe Fehlermodus hat einmal einen
+# Mac-App-Store-Build ausgeliefert, in dem die Whisper-Engine schlicht fehlte,
+# während jeder Schritt "success" meldete.
+#
+# Der einzige verlässliche Weg, das Bit zu setzen, ist
+# `git update-index --chmod=+x <datei>` (chmod allein reicht NICHT).
+SH_STAGED=$(echo "$STAGED_FILES" | grep -E '\.sh$' || true)
+if [ -n "$SH_STAGED" ]; then
+  NONEXEC=""
+  for f in $SH_STAGED; do
+    # Nur Skripte mit Shebang: die sind zum Ausführen gedacht. Reine
+    # Fragmente/Sourced-Libraries ohne Shebang bleiben unangetastet.
+    git show ":0:$f" 2>/dev/null | head -1 | grep -q '^#!' || continue
+    MODE=$(git ls-files -s -- "$f" | awk '{print $1}')
+    [ "$MODE" = "100644" ] && NONEXEC="$NONEXEC $f"
+  done
+  if [ -n "$NONEXEC" ]; then
+    cat >&2 <<EOF
+
+╔══════════════════════════════════════════════════════════════╗
+║  COMMIT BLOCKIERT: Shell-Skript ohne Executable-Bit          ║
+╚══════════════════════════════════════════════════════════════╝
+
+Diese gestageten Skripte haben eine Shebang, stehen im Index aber auf
+100644 (nicht ausführbar):
+EOF
+    for f in $NONEXEC; do echo "  - $f" >&2; done
+    cat >&2 <<EOF
+
+Wegen core.fileMode=false sieht Git ein blosses \`chmod +x\` NICHT.
+Korrektur:
+
+  git update-index --chmod=+x$NONEXEC
+
+EOF
+    exit 1
+  fi
+fi
+
+# ── 3c. dart format ───────────────────────────────────────────────────
+# `dart format` war in KEINEM Hook verdrahtet, obwohl CLAUDE.md es als
+# Gate-Command führt und diagnose-dart-smoke.yml es hart erzwingt. Run
+# 31591152047 ist genau daran rot geworden (gpu_info.dart in
+# packages/whispaste_diagnostics) — eine Fehlerklasse, die lokal in
+# Millisekunden auffällt, aber remote einen ganzen Runner-Lauf kostet.
+#
+# Bewusst exakt dieselben Befehle wie die CI (Local/CI-Drift vermeiden):
+# das Paket-Gate spiegelt diagnose-dart-smoke.yml, das Root-Gate die
+# CLAUDE.md-Zeile.
+if command -v dart >/dev/null 2>&1; then
+  DIAG_STAGED=$(echo "$STAGED_FILES" | grep -E '^packages/whispaste_diagnostics/.*\.dart$' || true)
+  ROOT_DART_STAGED=$(echo "$STAGED_FILES" | grep -E '^(lib|test)/.*\.dart$' || true)
+  fmt_bad=""
+  if [ -n "$DIAG_STAGED" ]; then
+    (cd "$ROOT/packages/whispaste_diagnostics" \
+      && dart format --output=none --set-exit-if-changed . >/dev/null 2>&1) \
+      || fmt_bad="$fmt_bad packages/whispaste_diagnostics"
+  fi
+  if [ -n "$ROOT_DART_STAGED" ]; then
+    # shellcheck disable=SC2086
+    (cd "$ROOT" && dart format --output=none --set-exit-if-changed $ROOT_DART_STAGED >/dev/null 2>&1) \
+      || fmt_bad="$fmt_bad <root lib/test>"
+  fi
+  if [ -n "$fmt_bad" ]; then
+    cat >&2 <<EOF
+
+╔══════════════════════════════════════════════════════════════╗
+║  COMMIT BLOCKIERT: dart format                               ║
+╚══════════════════════════════════════════════════════════════╝
+
+Nicht formatierter Dart-Code in:$fmt_bad
+
+Korrektur:
+  dart format packages/whispaste_diagnostics lib test
+  git add -u   # nur die betroffenen Dateien!
+
+EOF
+    exit 1
+  fi
+fi
+
 # ── 4. Flutter analyze (nur wenn Dart/Flutter-Dateien gestaged sind) ──
 DART_STAGED=$(echo "$STAGED_FILES" | grep -E '\.dart$|^pubspec\.yaml$' || true)
 if [ -n "$DART_STAGED" ]; then

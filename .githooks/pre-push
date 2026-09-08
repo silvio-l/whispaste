@@ -498,6 +498,22 @@ else
   echo "⚠ actionlint nicht installiert — Workflow-Lint übersprungen. Empfohlen: brew install actionlint" >&2
 fi
 
+# Workflow-Hygiene (Policy-Regeln, die actionlint strukturell NICHT sieht:
+# fehlendes timeout-minutes, unpinned flutter-version). Reiner YAML-Parse,
+# kein Netz — Begründung je Regel steht im Skript.
+if [ -f "$ROOT/scripts/check-workflow-hygiene.sh" ]; then
+  echo ""; echo "Workflow-Hygiene (timeouts, SDK-Pins)..."
+  if ! bash "$ROOT/scripts/check-workflow-hygiene.sh"; then
+    cat >&2 <<EOF
+
+╔══════════════════════════════════════════════════════════════╗
+║  PUSH BLOCKIERT: Workflow-Hygiene verletzt                   ║
+╚══════════════════════════════════════════════════════════════╝
+EOF
+    exit 1
+  fi
+fi
+
 # Semgrep SAST (sparsam: nur wenn installiert)
 if command -v semgrep >/dev/null 2>&1; then
   echo ""; echo "Semgrep SAST scan..."
