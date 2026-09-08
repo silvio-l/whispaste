@@ -105,6 +105,56 @@ void main() {
       expect(closed, isTrue);
     });
 
+    testWidgets('the close button and section tabs are keyboard-focusable '
+        '(issue: bare GestureDetector, unreachable by Tab)', (tester) async {
+      await tester.pumpWidget(
+        makeTestable(
+          const WpSidePanelView(
+            snapshot: SidePanelSnapshot(),
+            onRowTap: _noopTap,
+            onClose: _noopClose,
+          ),
+        ),
+      );
+
+      final closeInkWell = tester.widget<InkWell>(
+        find.descendant(
+          of: find.byWidgetPredicate(
+            (w) => w.runtimeType.toString() == '_CloseButton',
+          ),
+          matching: find.byType(InkWell),
+        ),
+      );
+      expect(
+        closeInkWell.focusNode,
+        isNotNull,
+        reason:
+            'the close button must own a focus node to be reachable '
+            'by Tab',
+      );
+
+      final tabInkWells = tester
+          .widgetList<InkWell>(
+            find.descendant(
+              of: find.byWidgetPredicate(
+                (w) => w.runtimeType.toString() == '_SidePanelTab',
+              ),
+              matching: find.byType(InkWell),
+            ),
+          )
+          .toList();
+      expect(tabInkWells, isNotEmpty);
+      for (final tab in tabInkWells) {
+        expect(
+          tab.focusNode,
+          isNotNull,
+          reason:
+              'each section tab must own a focus node to be reachable '
+              'by Tab',
+        );
+      }
+    });
+
     testWidgets('tapping a row reports its section and id', (tester) async {
       SidePanelSection? tappedSection;
       String? tappedId;

@@ -10,6 +10,7 @@ library;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:whispaste/core/data/database.dart';
 import 'package:whispaste/features/history/widgets/history_compact_view.dart';
 import 'package:whispaste/features/history/widgets/history_list_tile.dart';
@@ -73,21 +74,22 @@ Widget _compactRow() => HistoryCompactRow(
   onDelete: () {},
 );
 
-Widget _notesRow({bool isQuickNote = false}) => NotesListTile(
-  note: _note(isQuickNote: isQuickNote),
-  tags: const [],
-  isTrashView: false,
-  isSelected: false,
-  isFocused: false,
-  onTap: () {},
-  onCopy: () {},
-  onDuplicate: () {},
-  onFavoriteToggle: () {},
-  onQuickNoteSet: () {},
-  onQuickNoteClear: () {},
-  onRestore: () {},
-  onDeleteForever: () {},
-);
+Widget _notesRow({bool isQuickNote = false, bool isTrashView = false}) =>
+    NotesListTile(
+      note: _note(isQuickNote: isQuickNote),
+      tags: const [],
+      isTrashView: isTrashView,
+      isSelected: false,
+      isFocused: false,
+      onTap: () {},
+      onCopy: () {},
+      onDuplicate: () {},
+      onFavoriteToggle: () {},
+      onQuickNoteSet: () {},
+      onQuickNoteClear: () {},
+      onRestore: () {},
+      onDeleteForever: () {},
+    );
 
 /// Renders [row] inside a panel of [width], optionally at an enlarged system
 /// font size.
@@ -139,6 +141,34 @@ void main() {
           find.byType(WpRowAction),
           findsNWidgets(3),
           reason: 'switching to the compact view must not drop copy/pin/delete',
+        );
+      },
+    );
+
+    testWidgets(
+      'notes row keeps Copy and Duplicate visible in the trash view, not '
+      'just in the active-notes view (issue: they used to live inside the '
+      '!isTrashView-only branch and silently disappeared on a trashed note)',
+      (tester) async {
+        await tester.pumpWidget(
+          makeTestable(_panel(_notesRow(isTrashView: true))),
+        );
+        expect(find.byType(WpRowAction), findsNothing);
+
+        await _hover(tester, find.byType(NotesListTile));
+        expect(
+          find.byIcon(LucideIcons.copy),
+          findsOneWidget,
+          reason:
+              'Copy must stay available on a trashed note, matching the '
+              'note editor toolbar',
+        );
+        expect(
+          find.byIcon(LucideIcons.files),
+          findsOneWidget,
+          reason:
+              'Duplicate must stay available on a trashed note, matching '
+              'the note editor toolbar',
         );
       },
     );
