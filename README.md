@@ -51,7 +51,7 @@ Works in emails, chat apps, code editors, browsers, terminals — anywhere you w
 
 ## Key Features
 
-**Core** — Global hotkey · Push-to-talk & toggle · Auto-paste into any app (macOS/Windows; Linux copies to clipboard) · Recording overlay with waveform · Floating record button
+**Core** — Global hotkey · Push-to-talk & toggle · Auto-paste into any app (macOS/Windows/Linux with one-time uinput setup; clipboard fallback without setup) · Recording overlay with waveform · Floating record button
 
 **Transcription** — Offline by default, two local engines to choose from: [Whisper](https://github.com/ggml-org/whisper.cpp) ([99 languages](https://github.com/openai/whisper/blob/main/whisper/tokenizer.py), GPU-accelerated) or NVIDIA Parakeet (~25 languages, CPU-only, several times faster) — no API key required · Optional cloud providers (OpenAI, Deepgram) when you want them · Silence trimming at the end of a recording (Whisper engine)
 
