@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.75
+
+### Bug Fixes
+
+- **Das Zwischenablage-Schnelleinfüge-Panel erschien weiterhin beim Überfahren mit der Maus, obwohl es in den Einstellungen deaktiviert war.** Das Deaktivieren räumt jetzt auch den zugehörigen nativen Steuerungs-Controller korrekt ab.
+- **Zwischen „Werksreset" und „Einführung" konnte in den Einstellungen eine leere, unbeschriftete Karte erscheinen** — der „Updates"-Bereich ist auf Store-/paketverwalteten Installationen (Mac App Store, Microsoft Store, Paketmanager) jetzt vollständig ausgeblendet statt nur inhaltlich leer.
+- **Der „Bewerten"-Button öffnete auf dem Mac App Store immer GitHub statt der Mac-App-Store-Bewertungsseite.** Bewertungs-Buttons (Einstellungen und Bewertungs-Dialog) berücksichtigen jetzt den tatsächlichen Vertriebskanal: Mac App Store → Mac App Store, Microsoft Store → Microsoft Store, Installer/Portable → GitHub.
+
 ## 1.2.74
 
 ### New Features
