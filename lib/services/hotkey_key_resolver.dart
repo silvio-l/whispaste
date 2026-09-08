@@ -272,6 +272,13 @@ LogicalKeyboardKey? canonicalRecordableKey(KeyEvent event) {
   return null;
 }
 
+/// Canonical [LogicalKeyboardKey] for a given [physicalKey], per
+/// [_physicalToLogical]. Used to re-derive the storage key after
+/// `resolveWindowsKey` (win_layout_label.dart) corrects which physical
+/// position the active Windows keyboard layout actually registers (#108).
+LogicalKeyboardKey? logicalForPhysicalKey(PhysicalKeyboardKey physicalKey) =>
+    _physicalToLogical[physicalKey];
+
 /// PhysicalKeyboardKey → canonical LogicalKeyboardKey for keys whose logical
 /// representation may differ across keyboard layouts but whose physical
 /// position is stable. Keys here must be recordable per [isRecordableKey] —

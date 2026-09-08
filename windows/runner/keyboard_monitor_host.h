@@ -16,7 +16,8 @@
 // physically down (GetAsyncKeyState) and reports `onKeyUp` when it is released.
 //
 // Channel: com.whispaste.keyboard_monitor
-//   Dart → native:  start()  ·  armRelease()  ·  stop()
+//   Dart → native:  start()  ·  armRelease()  ·  stop()  ·
+//                    resolveLayoutLabel(vk)  ·  resolveLiveVirtualKey(scanCode)
 //   native → Dart:  onKeyUp   (watched main key released)
 
 #ifndef KEYBOARD_MONITOR_HOST_H_
@@ -62,6 +63,15 @@ class KeyboardMonitorHost {
   // US label that Flutter reports when a Ctrl/AltGr modifier is held (#39).
   // Returns "" when the key has no character (function keys etc.).
   std::string ResolveLayoutLabel(int vk);
+
+  // Resolves the Windows virtual-key that the ACTIVE keyboard layout assigns
+  // to a hardware scan code, right now. Windows layout drivers reassign the
+  // VK_OEM_* codes to different physical keys per layout (e.g. the German
+  // driver maps the physical "#" key, scan code 0x2B, to VK_OEM_2 — not
+  // VK_OEM_5 as the US layout does) — this is a live OS query rather than a
+  // hardcoded table, so it is correct for every layout, not just German
+  // (issue #108). Returns 0 when the scan code has no live mapping.
+  int ResolveLiveVirtualKey(int scan_code);
 
   flutter::FlutterEngine* engine_;
   HWND owner_;

@@ -105,6 +105,13 @@ std::string KeyboardMonitorHost::ResolveLayoutLabel(int vk) {
   return std::string(utf8, len);
 }
 
+int KeyboardMonitorHost::ResolveLiveVirtualKey(int scan_code) {
+  if (scan_code <= 0) return 0;
+  const HKL hkl = ::GetKeyboardLayout(0);
+  return static_cast<int>(::MapVirtualKeyExW(
+      static_cast<UINT>(scan_code), MAPVK_VSC_TO_VK_EX, hkl));
+}
+
 void KeyboardMonitorHost::HandleMethodCall(
     const MethodCall<EncodableValue>& call,
     std::unique_ptr<MethodResult<EncodableValue>> result) {
@@ -138,6 +145,20 @@ void KeyboardMonitorHost::HandleMethodCall(
       }
     }
     result->Success(EncodableValue(ResolveLayoutLabel(vk)));
+    return;
+  }
+
+  if (method == "resolveLiveVirtualKey") {
+    const auto* args = call.arguments();
+    const EncodableMap* map = args ? std::get_if<EncodableMap>(args) : nullptr;
+    int scan_code = 0;
+    if (map) {
+      auto it = map->find(EncodableValue("scanCode"));
+      if (it != map->end()) {
+        if (const auto* v = std::get_if<int>(&it->second)) scan_code = *v;
+      }
+    }
+    result->Success(EncodableValue(ResolveLiveVirtualKey(scan_code)));
     return;
   }
 

@@ -399,21 +399,48 @@ class _WpHotkeyRecorderDialogState extends State<WpHotkeyRecorderDialog> {
       ),
       Directionality.of(context),
     );
-    // Windows: a key captured under a Ctrl/AltGr modifier arrives as its
-    // US-canonical form — resolve the real layout label (Ö/Ä/Ü) for the cap.
-    unawaited(_resolveLayoutLabel(canonical, storageLabel));
+    // Windows: the physical key that just fired may not be the one the OS
+    // actually binds for the ACTIVE keyboard layout — Windows reassigns the
+    // VK_OEM_* codes per layout (e.g. the German driver maps the physical
+    // `#` key to VK_OEM_2, not VK_OEM_5 as hotkey_manager's US-based
+    // conversion assumes). Re-resolve and correct before the user saves (#108).
+    unawaited(
+      _correctForWindowsLayout(event.physicalKey, storageLabel, serializedMods),
+    );
   }
 
-  /// Replaces the displayed key cap with the active-layout character (e.g. `Ö`)
-  /// once the native lookup returns, if the same key is still selected.
-  Future<void> _resolveLayoutLabel(
-    LogicalKeyboardKey canonical,
+  /// Re-derives the storage key from the physical key the ACTIVE Windows
+  /// keyboard layout actually assigns it to, and refreshes the displayed cap
+  /// with the real character — once the native lookup returns, and only if
+  /// the same key is still selected. No-op off Windows or for layout-
+  /// invariant keys (letters, digits, arrows, named keys) — see
+  /// `resolveWindowsKey` (#108).
+  Future<void> _correctForWindowsLayout(
+    PhysicalKeyboardKey pressedPhysicalKey,
     String storageLabel,
+    String serializedMods,
   ) async {
-    final resolved = await resolveWindowsLayoutLabel(canonical);
-    if (resolved != null && mounted && _storageKey == storageLabel) {
-      setState(() => _keyLabel = resolved);
+    final resolution = await resolveWindowsKey(pressedPhysicalKey);
+    if (!mounted || _storageKey != storageLabel) return;
+    final correctedLogical = key_resolver.logicalForPhysicalKey(
+      resolution.physicalKey,
+    );
+    final correctedLabel = correctedLogical == null
+        ? null
+        : WpHotkeyRecorderDialog.keyLabel(correctedLogical);
+    if (correctedLabel == null || correctedLabel == storageLabel) {
+      // Physical position already matches what was registered — only the cap
+      // character may still need the real-layout correction.
+      if (resolution.displayLabel != null) {
+        setState(() => _keyLabel = resolution.displayLabel!);
+      }
+      return;
     }
+    setState(() {
+      _storageKey = correctedLabel;
+      _keyLabel = resolution.displayLabel ?? correctedLabel;
+      _conflict = findConflict(serializedMods, correctedLabel);
+    });
   }
 
   /// Builds the storage string for an AltGr combo: the distinct `altgr` token

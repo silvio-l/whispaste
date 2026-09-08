@@ -831,6 +831,72 @@ void main() {
       },
     );
 
+    testWidgets(
+      'AC-pb-1b: Ctrl+backslash on Windows corrects to the key the live '
+      'layout actually registers (#108 — German driver assigns the '
+      'physical "#" key to VK_OEM_2, not VK_OEM_5)',
+      (tester) async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+        const channel = MethodChannel('com.whispaste.keyboard_monitor');
+        try {
+          tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            channel,
+            (call) async {
+              final args = call.arguments as Map;
+              switch (call.method) {
+                case 'resolveLiveVirtualKey':
+                  // The physical key at scan code 0x2B (Flutter's `backslash`
+                  // position) is VK_OEM_2 under the German layout — not
+                  // VK_OEM_5, which is what hotkey_manager's static US-based
+                  // conversion would register for that physical position.
+                  return args['scanCode'] == 0x2B ? 0xBF : 0;
+                case 'resolveLayoutLabel':
+                  return args['vk'] == 0xBF ? '#' : '';
+                default:
+                  return null;
+              }
+            },
+          );
+
+          final result = await openAndCapture(
+            tester,
+            driveKeys: () async {
+              await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+              await tester.pump();
+              await tester.sendKeyDownEvent(LogicalKeyboardKey.backslash);
+              await tester.pump();
+              // Let the async live-layout correction (chained platform-
+              // channel round trips) resolve before the combo is released
+              // and saved.
+              await tester.pumpAndSettle();
+              await tester.sendKeyUpEvent(LogicalKeyboardKey.backslash);
+              await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+              await tester.pump();
+            },
+          );
+
+          expect(result, isNotNull);
+          expect(
+            result!.key,
+            '/',
+            reason:
+                'Must store the physical key the German layout actually '
+                'assigns VK_OEM_2 to (canonical "slash"), not the raw '
+                '"backslash" position that was physically pressed — '
+                'otherwise RegisterHotKey binds the wrong physical key.',
+          );
+          expect(result.displayKey, '#');
+          expect(result.modifiers, 'ctrl');
+        } finally {
+          tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            channel,
+            null,
+          );
+          debugDefaultTargetPlatformOverride = null;
+        }
+      },
+    );
+
     // AC-pb-2 (DE-layout Ö capture) is covered at the resolver level in
     // test/services/hotkey_key_resolver_test.dart — driving a KeyDownEvent
     // with a non-Flutter-known logicalKey from a widget test would require
