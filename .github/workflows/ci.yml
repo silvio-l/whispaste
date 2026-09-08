@@ -3,15 +3,13 @@ name: CI
 on:
   push:
     branches: [dev]
-  pull_request:
-    branches: [main, dev]
 
-# Ohne diese Group liefe ein Push nach dev und ein zeitgleicher PR auf denselben
-# Commit doppelt (push- und pull_request-Event feuern beide) — doppelte
-# Runner-Zeit, doppelte Fail-Mails. Gruppiert pro Ref, storniert den älteren
-# Lauf statt ihn auslaufen zu lassen.
+# Solo-Dev: keine PRs (CLAUDE.md), der pull_request-Trigger lief seit je her
+# ins Leere und kostete nur ungenutzte Runner-Zeit/Sicherheitsrisiko (siehe
+# unten, self-hosted Runner). Ein rascher Folge-Push nach dev storniert den
+# älteren, noch laufenden Lauf statt ihn auslaufen zu lassen.
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -63,7 +61,12 @@ jobs:
 
   flutter-app:
     name: Flutter App (Windows)
-    runs-on: windows-latest
+    # Self-hosted (SilviosPC) statt windows-latest — GitHub-gehostete Windows-
+    # Runner werden mit 2x gegenüber Linux abgerechnet; bei mehreren Pushes/Tag
+    # sprengte das schnell das Actions-Freikontingent (siehe git-log dieses
+    # Commits). Fällt der Runner offline (DHCP-Box, s. windows-silviospc.md),
+    # bleibt der Job im GitHub-UI als "queued" hängen statt zu failen.
+    runs-on: [self-hosted, Windows, X64]
     # Mirrors the macOS job's timeout: without an explicit limit, a hung step
     # only gets killed by the 360min GitHub default — run 33364827323 saw a
     # Windows job still going at 81min before an unrelated concurrency
@@ -196,7 +199,10 @@ jobs:
 
   flutter-app-macos:
     name: Flutter App (macOS)
-    runs-on: macos-latest
+    # Self-hosted (dieser Mac) statt macos-latest — GitHub-gehostete macOS-
+    # Runner werden mit 10x gegenüber Linux abgerechnet, größter Einzelposten
+    # im Actions-Freikontingent (siehe git-log dieses Commits).
+    runs-on: [self-hosted, macOS, ARM64]
     # A normal run finishes in ~14-15min; run 31671272849 got killed by this
     # timeout at 20m20s with every step already green (build done, secure-
     # storage test just starting) — plain runner-speed variance, not a hang.
@@ -284,6 +290,11 @@ jobs:
 
   flutter-app-linux:
     name: Flutter App (Linux)
+    # Bleibt ubuntu-latest (1x, günstigster Multiplikator) — Verlagerung auf
+    # die NAS (silvio222) scheiterte am fehlenden passwortlosen sudo für die
+    # nötigen apt-Pakete (unzip/clang/cmake/ninja/pkg-config/libgtk-3-dev für
+    # den Flutter-Linux-Desktop-Build). Einmaliger manueller apt-get-Lauf mit
+    # sudo-Passwort würde die Migration freischalten, siehe Chat.
     runs-on: ubuntu-latest
     # See the Windows job's timeout-minutes comment — same rationale applies.
     timeout-minutes: 35
@@ -384,7 +395,8 @@ jobs:
   # The main flutter-app-* jobs keep --exclude-tags=golden unchanged.
   golden-tests:
     name: Golden Tests (macOS)
-    runs-on: macos-latest
+    # Self-hosted, see flutter-app-macos above (10x-Multiplikator).
+    runs-on: [self-hosted, macOS, ARM64]
     # See the Windows job's timeout-minutes comment. A normal run finishes in
     # ~9min; 20min gives headroom without masking an actual stuck job.
     timeout-minutes: 20
@@ -424,6 +436,9 @@ jobs:
 
   website:
     name: Website
+    # Bleibt ubuntu-latest — Playwrights System-Abhängigkeiten
+    # (`playwright install --with-deps`) brauchen ebenfalls apt/sudo, siehe
+    # flutter-app-linux oben.
     runs-on: ubuntu-latest
     # See the Windows job's timeout-minutes comment. This job additionally
     # bounds its own slowest step (npm audit) per-attempt below, so this is
