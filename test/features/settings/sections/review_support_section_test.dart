@@ -10,6 +10,8 @@
 /// case here exercises the actual `Platform.isMacOS` branch.
 library;
 
+import 'dart:io' as io;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,6 +50,7 @@ void main() {
 
   testWidgets(
     'store channel opens the Mac App Store review URL on macOS, not GitHub',
+    skip: !io.Platform.isMacOS,
     (tester) async {
       await tester.pumpWidget(
         makeTestable(
