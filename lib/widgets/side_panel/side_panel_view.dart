@@ -341,6 +341,13 @@ class _SidePanelTab extends StatefulWidget {
 
 class _SidePanelTabState extends State<_SidePanelTab> {
   bool _isHovered = false;
+  final FocusNode _focusNode = FocusNode(debugLabel: 'SidePanelTab');
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -353,39 +360,49 @@ class _SidePanelTabState extends State<_SidePanelTab> {
         cursor: SystemMouseCursors.click,
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
-        child: GestureDetector(
-          onTap: widget.onTap,
-          child: AnimatedContainer(
-            duration: WpMotion.durationFor(
-              context,
-              isActive ? WpMotion.hoverIn : WpMotion.hoverOut,
-            ),
-            curve: WpMotion.defaultCurve,
-            height: 28,
-            decoration: BoxDecoration(
-              color: widget.isSelected
-                  ? WpColors.accentActiveFill
-                  : _isHovered
-                  ? WpColors.hover
-                  : WpColors.hoverTransparent,
-              borderRadius: WpRadius.borderSm,
-              // Never null -- animates its alpha, so the selection edge
-              // fades instead of flashing (see wp_list_tile_surface.dart).
-              border: Border.all(
-                color: widget.isSelected
-                    ? WpColors.accentBorder20
-                    : const Color(0x006FDDF0),
-                width: 1,
+        child: WpFocusRing(
+          focusNode: _focusNode,
+          radius: WpRadius.sm,
+          child: InkWell(
+            onTap: widget.onTap,
+            focusNode: _focusNode,
+            borderRadius: WpRadius.borderSm,
+            focusColor: Colors.transparent,
+            hoverColor: Colors.transparent,
+            splashColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            child: AnimatedContainer(
+              duration: WpMotion.durationFor(
+                context,
+                isActive ? WpMotion.hoverIn : WpMotion.hoverOut,
               ),
-            ),
-            child: Icon(
-              widget.icon,
-              size: WpIconSize.md,
-              color: widget.isSelected
-                  ? WpColors.accent
-                  : _isHovered
-                  ? WpColors.textSecondary
-                  : WpColors.textMuted,
+              curve: WpMotion.defaultCurve,
+              height: 28,
+              decoration: BoxDecoration(
+                color: widget.isSelected
+                    ? WpColors.accentActiveFill
+                    : _isHovered
+                    ? WpColors.hover
+                    : WpColors.hoverTransparent,
+                borderRadius: WpRadius.borderSm,
+                // Never null -- animates its alpha, so the selection edge
+                // fades instead of flashing (see wp_list_tile_surface.dart).
+                border: Border.all(
+                  color: widget.isSelected
+                      ? WpColors.accentBorder20
+                      : const Color(0x006FDDF0),
+                  width: 1,
+                ),
+              ),
+              child: Icon(
+                widget.icon,
+                size: WpIconSize.md,
+                color: widget.isSelected
+                    ? WpColors.accent
+                    : _isHovered
+                    ? WpColors.textSecondary
+                    : WpColors.textMuted,
+              ),
             ),
           ),
         ),
@@ -406,6 +423,13 @@ class _CloseButton extends StatefulWidget {
 
 class _CloseButtonState extends State<_CloseButton> {
   bool _isHovered = false;
+  final FocusNode _focusNode = FocusNode(debugLabel: 'CloseButton');
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -416,24 +440,34 @@ class _CloseButtonState extends State<_CloseButton> {
         cursor: SystemMouseCursors.click,
         onEnter: (_) => setState(() => _isHovered = true),
         onExit: (_) => setState(() => _isHovered = false),
-        child: GestureDetector(
-          onTap: widget.onTap,
-          child: AnimatedContainer(
-            duration: WpMotion.durationFor(
-              context,
-              _isHovered ? WpMotion.hoverIn : WpMotion.hoverOut,
-            ),
-            curve: WpMotion.defaultCurve,
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: _isHovered ? WpColors.hover : WpColors.hoverTransparent,
-              borderRadius: WpRadius.borderSm,
-            ),
-            child: Icon(
-              LucideIcons.x,
-              size: WpIconSize.md,
-              color: _isHovered ? WpColors.textPrimary : WpColors.textMuted,
+        child: WpFocusRing(
+          focusNode: _focusNode,
+          radius: WpRadius.sm,
+          child: InkWell(
+            onTap: widget.onTap,
+            focusNode: _focusNode,
+            borderRadius: WpRadius.borderSm,
+            focusColor: Colors.transparent,
+            hoverColor: Colors.transparent,
+            splashColor: Colors.transparent,
+            highlightColor: Colors.transparent,
+            child: AnimatedContainer(
+              duration: WpMotion.durationFor(
+                context,
+                _isHovered ? WpMotion.hoverIn : WpMotion.hoverOut,
+              ),
+              curve: WpMotion.defaultCurve,
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: _isHovered ? WpColors.hover : WpColors.hoverTransparent,
+                borderRadius: WpRadius.borderSm,
+              ),
+              child: Icon(
+                LucideIcons.x,
+                size: WpIconSize.md,
+                color: _isHovered ? WpColors.textPrimary : WpColors.textMuted,
+              ),
             ),
           ),
         ),
