@@ -1,12 +1,13 @@
 # Homebrew Cask für WhisPaste (macOS, Apple Silicon).
 #
-# ⚠️ VORAUSSETZUNG: Erst veröffentlichen, wenn die macOS-Builds Developer-ID-
-# signiert UND notarisiert sind. Ohne Notarization setzt Homebrew das App-Bundle
-# unter Quarantäne und Gatekeeper blockt den Start — schlechte Nutzererfahrung.
-# Siehe packaging/README.md → "Homebrew (macOS)".
+# Live seit v1.2.75: macOS-Builds sind Developer-ID-signiert und notarisiert
+# (release.yml, "Sign, notarize and staple .app"), Homebrew kann das Bundle
+# ohne Gatekeeper-Quarantäne-Blockade installieren. Siehe packaging/README.md
+# → "Homebrew Cask (macOS)".
 #
-# Veröffentlichung als eigener Tap: github.com/whispaste/homebrew-tap
-#   -> Datei dort als Casks/whispaste.rb ablegen, dann:
+# Veröffentlicht als eigener Tap: github.com/whispaste/homebrew-tap
+#   -> diese Datei dort als Casks/whispaste.rb (manueller Sync pro Release,
+#      release.yml pusht nicht automatisch ins externe Tap-Repo):
 #      brew install --cask whispaste/tap/whispaste
 cask "whispaste" do
   version "1.2.75"

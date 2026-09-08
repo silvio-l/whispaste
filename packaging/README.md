@@ -8,7 +8,7 @@ und GitHub Releases. Alle Manifeste zeigen auf die Assets der GitHub Releases
 |---|---|---|---|
 | Scoop | `scoop/whispaste.json` | Windows x64 | ✅ sofort nutzbar |
 | winget | `winget/SilvioLindstedt.WhisPaste.*.yaml` | Windows x64 | ⚠️ PR an `microsoft/winget-pkgs` nötig |
-| Homebrew Cask | `homebrew/whispaste.rb` | macOS arm64 | ⛔ erst nach Notarization veröffentlichen |
+| Homebrew Cask | `homebrew/whispaste.rb` | macOS arm64 | ✅ veröffentlicht (Developer-ID-Notarization live seit v1.2.75) — `whispaste/homebrew-tap` |
 | Flatpak / Flathub | `flatpak/de.whispaste.app.yml` | Linux x86_64 | ⚠️ PR an `flathub/flathub` nötig — Runbook: `flatpak/README.md` |
 | AppImage | `appimage/build-appimage.sh` | Linux x86_64 | ✅ in `release.yml` gebaut, als Release-Asset angehängt — Runbook: `appimage/README.md` |
 | `.deb` (Debian/Ubuntu) | `deb/build-deb.sh` + `deb/control.template` | Linux x86_64 | ✅ in `release.yml` gebaut, als Release-Asset angehängt — Runbook: `deb/README.md` |
@@ -70,18 +70,22 @@ winget-Manifeste leben zentral in `microsoft/winget-pkgs`. Ablauf:
 
 ---
 
-## Homebrew Cask (macOS) — erst nach Notarization
+## Homebrew Cask (macOS) — veröffentlicht
 
-⛔ **Noch nicht veröffentlichen.** Die macOS-Builds sind derzeit nicht
-Developer-ID-signiert/notarisiert. Homebrew setzt heruntergeladene Apps unter
-Quarantäne; ohne Notarization blockt Gatekeeper den Start → defektes Nutzererlebnis.
+✅ **Live seit v1.2.75.** Die macOS-Builds sind Developer-ID-signiert und
+notarisiert (`Sign, notarize and staple .app`-Step in `release.yml`); Homebrew
+kann das Bundle ohne Gatekeeper-Quarantäne-Blockade installieren.
 
-Sobald der Notarization-Schritt in `release.yml` steht:
-1. Tap-Repo `whispaste/homebrew-tap` anlegen, Datei als `Casks/whispaste.rb`.
-2. Nutzer:
-   ```bash
-   brew install --cask whispaste/tap/whispaste
-   ```
+Tap-Repo: `whispaste/homebrew-tap`, Datei `Casks/whispaste.rb`. `release.yml`
+bumpt `packaging/homebrew/whispaste.rb` in diesem Repo automatisch pro Release
+(`Bump packaging manifests`-Job, Notarization-Guard); der Abgleich ins
+`homebrew-tap`-Repo ist derzeit ein manueller `git push` dorthin (kein
+Cross-Repo-Automatisierungsschritt in `release.yml`).
+
+Nutzer:
+```bash
+brew install --cask whispaste/tap/whispaste
+```
 `livecheck` (strategy `github_latest`) meldet neue Versionen; `sha256` muss pro
 Release aktualisiert werden (oder via `brew bump-cask-pr` automatisiert).
 
