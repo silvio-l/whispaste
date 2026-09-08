@@ -71,19 +71,22 @@ class _WpReviewPromptWatcherState extends ConsumerState<WpReviewPromptWatcher>
         onResult: (action) async {
           Navigator.of(ctx).pop();
           markPromptDialogClosed();
-          await _handleAction(action);
+          await _handleAction(action, channel);
         },
       ),
     );
     markPromptDialogClosed();
   }
 
-  Future<void> _handleAction(_ReviewAction action) async {
+  Future<void> _handleAction(
+    _ReviewAction action,
+    DeployChannel channel,
+  ) async {
     final notifier = ref.read(reviewPromptProvider.notifier);
     switch (action) {
       case _ReviewAction.rateStore:
         await notifier.markShown();
-        await _launchUrl(_storeUrl());
+        await _launchUrl(_storeUrl(channel));
       case _ReviewAction.starGitHub:
         await notifier.markShown();
         await _launchUrl(kGitHubRepoUrl);
@@ -100,9 +103,20 @@ class _WpReviewPromptWatcherState extends ConsumerState<WpReviewPromptWatcher>
     }
   }
 
-  // Always the Windows Store review URL — the rateStore action is only
-  // reachable when the Store button is shown (Windows store/installer/portable).
-  String _storeUrl() => kWindowsStoreReviewUrl;
+  // The rateStore action is reachable either from the store-channel CTA
+  // (macOS MAS build or Windows Store build) or from the Windows
+  // installer/portable CTA (which is only ever shown on Windows, see
+  // `_portableButtons`) — so a MAS install (store channel, not Windows) is
+  // the only case that must not fall through to the Windows Store
+  // deep-link. Branches on [_isWindows] (the same testable seam every other
+  // platform check in this file uses) rather than `Platform.isMacOS`
+  // directly, so this stays overridable in tests.
+  String _storeUrl(DeployChannel channel) {
+    if (!_isWindows && channel == DeployChannel.store) {
+      return kMacAppStoreReviewUrl;
+    }
+    return kWindowsStoreReviewUrl;
+  }
 
   Future<void> _launchUrl(String url) async {
     final uri = Uri.parse(url);

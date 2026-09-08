@@ -37,6 +37,14 @@ String privacyPolicyUrl(String languageCode) => languageCode == 'de'
 const String kWindowsStoreReviewUrl =
     'ms-windows-store://review/?ProductId=9p22jvkrq2v0';
 
+/// Mac App Store review deep-link. Opens the "Write a Review" sheet directly
+/// for the WhisPaste listing. The app id (`6795319409`) is the fixed store
+/// entry — same id the website's `MAC_APP_STORE_URL` uses
+/// (`website/src/data/platforms.ts`) — and must not be edited without a
+/// store-listing change.
+const String kMacAppStoreReviewUrl =
+    'macappstore://apps.apple.com/app/id6795319409?action=write-review';
+
 /// GitHub Sponsors page for the maintainer. Used by the About page's support
 /// section.
 const String kGitHubSponsorsUrl = 'https://github.com/sponsors/silvio-l';

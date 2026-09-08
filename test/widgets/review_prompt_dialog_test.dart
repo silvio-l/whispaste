@@ -402,5 +402,29 @@ void main() {
 
       expect(capturedUrl, isNot(contains('apps.apple.com')));
     });
+
+    // Regression test: the store-channel "Yes" button used to always launch
+    // the Windows Store review URL regardless of platform, so a Mac App
+    // Store install (channel == store, !isWindows) silently failed to open
+    // anything (ms-windows-store:// does not resolve on macOS).
+    testWidgets(
+      'macOS store Yes-button → Mac App Store review URL, not the Windows '
+      'Store URL',
+      (tester) async {
+        await _showDialog(
+          tester,
+          DeployChannel.store,
+          isWindows: false,
+          l10n: l10n,
+        );
+        await _answerGateYes(tester, l10n);
+
+        await tester.tap(find.text(l10n.reviewPromptYes));
+        await tester.pumpAndSettle();
+
+        expect(capturedUrl, kMacAppStoreReviewUrl);
+        expect(capturedUrl, isNot(kWindowsStoreReviewUrl));
+      },
+    );
   });
 }

@@ -7,6 +7,7 @@
 #   - website/            (Marketing-Site, DE + EN)
 #   - website/src/data/platforms.ts      (SSoT Plattform/Store-Metadaten)
 #   - website/src/data/brand-glossary.ts (SSoT Anti-Vokabular / kanonische Sprache)
+#   - lib/core/app_urls.dart             (SSoT Store-/externe URLs auf der Flutter-Seite)
 #
 #   docs-attest.sh check     Struktur- & Konsistenz-Invarianten (immer erfüllen).
 #   docs-attest.sh attest    BEWUSSTE Bestätigung vor dem Push: alle Artefakte sind
@@ -29,6 +30,7 @@ WEB="$ROOT/website"
 WEBSRC="$WEB/src"
 PLATFORMS="$WEBSRC/data/platforms.ts"
 GLOSSARY="$WEBSRC/data/brand-glossary.ts"
+APP_URLS="$ROOT/lib/core/app_urls.dart"
 SPEC="$ROOT/docs/public-docs-spec.md"   # interne QS-Spec, bewusst gitignored
 ATTEST="$ROOT/.docs-attest"
 PAGES="$WEBSRC/pages"
@@ -161,16 +163,19 @@ check_platform_store() {
 
   # (B) Apple App Store: macOS-Listing ist seit v1.2.67 (2026-08-19) live
   #     (App Store Connect App-ID 6795319409). platforms.ts (MAC_APP_STORE_URL)
-  #     ist die SSoT — ein `apps.apple.com`-Literal AUSSERHALB dieser Datei ist
-  #     Drift (dieselbe Klasse wie die MS-Store-Product-ID-Duplikat-Prüfung
-  #     oben). In lib/ (Flutter) gibt es noch keine Mac-App-Store-Verwendung —
-  #     ein Treffer dort ist ebenfalls Drift, bis das bewusst nachgezogen wird.
+  #     ist die SSoT für die Website; app_urls.dart (kMacAppStoreReviewUrl) ist
+  #     die äquivalente SSoT für die Flutter-App, seit die App selbst (Settings
+  #     „Bewerten"-Button, Review-Prompt-Dialog) auf den Mac App Store verlinkt
+  #     (2026-09-08) — beide Dateien sind erlaubt, jeder weitere
+  #     `apps.apple.com`-Literal ist Drift (dieselbe Klasse wie die
+  #     MS-Store-Product-ID-Duplikat-Prüfung oben).
   local applehits
   applehits="$(grep -rln --include='*.astro' --include='*.ts' --include='*.js' --include='*.dart' \
                --exclude-dir=__tests__ --exclude='*.test.ts' --exclude='*.spec.ts' \
-               -F 'apps.apple.com' "$WEBSRC" "$ROOT/lib" 2>/dev/null | grep -vF "$PLATFORMS" || true)"
+               -F 'apps.apple.com' "$WEBSRC" "$ROOT/lib" 2>/dev/null \
+               | grep -vF "$PLATFORMS" | grep -vF "$APP_URLS" || true)"
   if [ -n "$applehits" ]; then
-    note "apps.apple.com-Literal außerhalb platforms.ts (SSoT verletzt):"
+    note "apps.apple.com-Literal außerhalb platforms.ts/app_urls.dart (SSoT verletzt):"
     echo "$applehits" | sed "s|$ROOT/|    |"
   fi
 
