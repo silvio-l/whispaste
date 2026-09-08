@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.76
+
+### Bug Fixes
+
+- **Globale Hotkeys registrierten auf Nicht-US-Tastaturlayouts (z. B. Deutsch) teils die falsche physische Taste** (z. B. Strg+# wurde als Strg+^ registriert). Die Hotkey-Aufnahme fragt jetzt live beim aktiven Windows-Tastaturlayout nach, statt sich auf eine statische, US-Layout-basierte Zuordnung zu verlassen. (#108)
+
 ## 1.2.75
 
 ### Bug Fixes
