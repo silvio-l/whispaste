@@ -29,3 +29,7 @@ button's hit area, or remove the now-duplicate inner button, but never both.
 ## 2026-10-23 - Keyboard focus on window control buttons
 **Learning:** Sub-components like custom window control buttons (`_WindowButton`, `_MaximizeButton`) in standard title bars using `GestureDetector` inside an `AnimatedContainer` need `InkWell` combined with a `WpFocusRing` sharing a `FocusNode` to be accessible via keyboard.
 **Action:** When updating such custom buttons to support keyboard accessibility, replace `GestureDetector` with an `InkWell` wrapped in `WpFocusRing`, and set the `InkWell` interaction colors to transparent so they don't visually clash with the `AnimatedContainer`'s existing styling logic (which can be extended to listen to `FocusNode.hasFocus`).
+
+## 2023-11-09 - Keyboard accessibility on Side Panel interactive tabs and close buttons
+**Learning:** Just like window control buttons or history detail panels, custom side panel segmented controls (`_SidePanelTab`) and buttons (`_CloseButton`) that rely on an `AnimatedContainer` with a bare `GestureDetector` lack keyboard accessibility.
+**Action:** When updating Side Panel custom components to support keyboard focus and activation (Space/Enter), replace the `GestureDetector` with an `InkWell` wrapped in a `WpFocusRing` passing the same `FocusNode`. Ensure `focusColor`, `hoverColor`, `splashColor`, and `highlightColor` are set to `Colors.transparent` on the `InkWell` to not visually clash with the `AnimatedContainer`'s existing styling logic.
