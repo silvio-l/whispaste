@@ -15,3 +15,7 @@
 ## 2025-03-02 - Add duplicate action to note editor toolbar
 **Learning:** Adding a button to the NoteEditorPanel toolbar for an action (like Duplicate) that is already supported and plumbed through the widget tree (via `onDuplicate` callback) is a low-risk, high-value Sprout task. It exposes existing functionality.
 **Action:** Always verify if an action already has a callback passed into the widget when considering exposing it in the UI. If it does, implementing it is as simple as adding the UI element. When adding a new required field to a mock class (or discovering an existing one was not mocked everywhere), be sure to update all test usages.
+
+## 2025-03-05 - Notes List Tile Trash View Action Consistency
+**Learning:** In WhisPaste, some actions like "Copy" or "Duplicate" on list tiles can be mistakenly hidden in specific modes (like trash view) simply because their layout was isolated inside a conditionally rendered block. This creates a consistency gap with the Detail/Editor panel which successfully shows those actions on trashed items.
+**Action:** When working as Sprout to unify UI actions, verify that standard actions are structurally placed *outside* mutually-exclusive layout blocks (e.g., `isTrashView` conditionals) when they apply to all states.

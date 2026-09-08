@@ -289,26 +289,26 @@ class _NotesListTileState extends State<NotesListTile> {
                         color: textMuted,
                       ),
                     ),
-                    if (!widget.isTrashView) ...[
-                      const SizedBox(width: WpSpacing.xxs),
-                      WpRowActions(
-                        visible: _isHovered || widget.isFocused,
-                        dense: true,
-                        children: [
-                          // loam-ignore: a11y-interactive-semantics – semantics provided in _WpRowActionState.build
+                    const SizedBox(width: WpSpacing.xxs),
+                    WpRowActions(
+                      visible: _isHovered || widget.isFocused,
+                      dense: true,
+                      children: [
+                        // loam-ignore: a11y-interactive-semantics – semantics provided in _WpRowActionState.build
+                        WpRowAction(
+                          icon: LucideIcons.copy,
+                          tooltip: l10n.notesCopy,
+                          onTap: widget.onCopy,
+                          dense: true,
+                        ),
+                        if (widget.onDuplicate case final onDuplicate?)
                           WpRowAction(
-                            icon: LucideIcons.copy,
-                            tooltip: l10n.notesCopy,
-                            onTap: widget.onCopy,
+                            icon: LucideIcons.files,
+                            tooltip: l10n.actionDuplicate,
+                            onTap: onDuplicate,
                             dense: true,
                           ),
-                          if (widget.onDuplicate case final onDuplicate?)
-                            WpRowAction(
-                              icon: LucideIcons.files,
-                              tooltip: l10n.actionDuplicate,
-                              onTap: onDuplicate,
-                              dense: true,
-                            ),
+                        if (!widget.isTrashView)
                           if (!widget.note.isQuickNote)
                             // Setting the mark is an ordinary trailing row action —
                             // revealed on hover/focus like every other one, and
@@ -322,15 +322,7 @@ class _NotesListTileState extends State<NotesListTile> {
                               onTap: widget.onQuickNoteSet,
                               dense: true,
                             ),
-                        ],
-                      ),
-                    ],
-                    if (widget.isTrashView) ...[
-                      const SizedBox(width: WpSpacing.xxs),
-                      WpRowActions(
-                        visible: _isHovered || widget.isFocused,
-                        dense: true,
-                        children: [
+                        if (widget.isTrashView) ...[
                           // loam-ignore: a11y-interactive-semantics – semantics provided in _WpRowActionState.build
                           WpRowAction(
                             // Same restore glyph as the editor toolbar and
@@ -349,8 +341,8 @@ class _NotesListTileState extends State<NotesListTile> {
                             dense: true,
                           ),
                         ],
-                      ),
-                    ],
+                      ],
+                    ),
                   ],
                 ),
                 // Row 2: content preview — hidden when the note is title-only
