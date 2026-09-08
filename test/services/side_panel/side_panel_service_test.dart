@@ -91,8 +91,8 @@ class _FakeSidePanelController implements SidePanelController {
 
 /// Reads the notifier while retaining a live listener on the provider.
 ///
-/// [sidePanelServiceProvider] is a plain (non-keepAlive) `NotifierProvider`;
-/// in production it stays alive because `WpServiceBootstrap` watches it for
+/// [sidePanelServiceProvider] is `NotifierProvider.autoDispose`; in
+/// production it stays alive because `WpServiceBootstrap` watches it for
 /// the app's lifetime. A bare `container.read(...)` here has no such
 /// watcher, so under Riverpod 3's auto-dispose-by-default the element (and
 /// the `ref.listen` subscriptions its `onControllerReady` sets up on
@@ -197,6 +197,36 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(fakePanel.snapshots.last.visible, isFalse);
+    });
+
+    // Regression test for the "disabled panel still appears" bug:
+    // `sidePanelServiceProvider` must be `.autoDispose` because
+    // `WpServiceBootstrap` only watches it while
+    // `settings.interface_.sidePanelEnabled` is true (see
+    // `service_bootstrap.dart`). If the provider were a plain (keepAlive)
+    // `NotifierProvider`, dropping that one watch when the user flips the
+    // toggle off would not tear the notifier -- and therefore its native
+    // controller and hover sensors -- down at all, since Riverpod only
+    // disposes autoDispose providers once their last listener goes away.
+    test('losing the last listener (mirrors the setting being toggled off) '
+        'disposes the native controller', () async {
+      container = buildContainer();
+      final sub = container.listen(sidePanelServiceProvider, (_, _) {});
+      // Force creation, mirroring `ref.watch` triggering `build()`.
+      container.read(sidePanelServiceProvider.notifier);
+      expect(fakePanel.disposed, isFalse);
+
+      sub.close();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        fakePanel.disposed,
+        isTrue,
+        reason:
+            'sidePanelServiceProvider must be NotifierProvider.autoDispose '
+            'so it (and its native controller) actually tears down once '
+            'nothing watches it anymore',
+      );
     });
   });
 

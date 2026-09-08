@@ -251,6 +251,5 @@ class SidePanelService
   }
 }
 
-final sidePanelServiceProvider = NotifierProvider<SidePanelService, void>(
-  SidePanelService.new,
-);
+final sidePanelServiceProvider =
+    NotifierProvider.autoDispose<SidePanelService, void>(SidePanelService.new);
