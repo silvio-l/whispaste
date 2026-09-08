@@ -6,6 +6,7 @@ import '../../core/theme/colors.dart';
 import '../../core/theme/tokens.dart';
 import '../../services/side_panel/side_panel_row_filter.dart';
 import '../../services/side_panel/side_panel_snapshot.dart';
+import '../wp_focus_ring.dart';
 import '../wp_search_field.dart';
 import 'side_panel_row_tile.dart';
 
