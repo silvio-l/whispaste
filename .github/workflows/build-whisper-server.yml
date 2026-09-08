@@ -47,6 +47,36 @@ jobs:
           fi
           echo "Tag '$TAG' is valid"
 
+      - name: Check build_suffix format
+        run: |
+          SUFFIX="${{ inputs.build_suffix }}"
+          if [[ -n "$SUFFIX" && ! "$SUFFIX" =~ ^([.\-][0-9A-Za-z]+)+$ ]]; then
+            echo "::error::Invalid build_suffix '$SUFFIX'. Use e.g. '.1' or '-2'."
+            exit 1
+          fi
+          echo "Suffix '$SUFFIX' is valid"
+
+      # Pre-flight the UPSTREAM preconditions here, in a 5-minute ubuntu job,
+      # rather than discovering them 45 minutes deep in a 4-platform matrix.
+      # build-cpu-windows downloads exactly this asset with Invoke-WebRequest
+      # and dies on a 404 — after the other three jobs have already run.
+      - name: Verify upstream whisper.cpp tag and BLAS asset exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ inputs.whisper_tag }}"
+          if ! gh api "repos/ggml-org/whisper.cpp/releases/tags/$TAG" \
+                 --jq '.assets[].name' > /tmp/upstream-assets.txt 2>/dev/null; then
+            echo "::error::Upstream release ggml-org/whisper.cpp@$TAG does not exist."
+            exit 1
+          fi
+          if ! grep -qx 'whisper-blas-bin-x64.zip' /tmp/upstream-assets.txt; then
+            echo "::error::Upstream release $TAG has no whisper-blas-bin-x64.zip asset (the CPU-floor build needs it). Assets present:"
+            cat /tmp/upstream-assets.txt
+            exit 1
+          fi
+          echo "Upstream $TAG present, with whisper-blas-bin-x64.zip."
+
   build-vulkan-windows:
     name: Vulkan – Windows x64
     needs: validate-input
@@ -460,27 +490,40 @@ jobs:
       - name: List artifacts
         run: ls -lhR assets/
 
-      - name: Delete previous release if exists
+      # ---------------------------------------------------------------------
+      # Immutable releases are enabled on this repo, which makes the old
+      # "delete the release, delete the tag, recreate both" dance impossible:
+      # a tag once used by an immutable release is burned FOREVER, even after
+      # `gh release delete --cleanup-tag`. That single property caused 7 of
+      # this workflow's 10 historical failures (runs 24149578036, 24151923923,
+      # 24152238110, 24659176797, 24659603799, 24659942005, 24660521948,
+      # 26973643028) and the publish step was rewritten five times chasing it.
+      #
+      # So: never reuse a tag, and never push a ref. Pick the first free name
+      # instead, and let softprops/action-gh-release create the tag from
+      # `tag_name` as part of the (single, atomic) release creation. Dropping
+      # the `git push` also removes the dependency on repository tag rulesets,
+      # which separately killed run 27404728869 with
+      # "GH013: Cannot create ref due to creations being restricted".
+      # ---------------------------------------------------------------------
+      - name: Compute a collision-free release tag
+        id: tag
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="whisper-server-${{ inputs.whisper_tag }}${{ inputs.build_suffix }}"
-          if gh release view "$TAG" &>/dev/null; then
-            echo "Deleting existing release $TAG..."
-            gh release delete "$TAG" --yes --cleanup-tag
-            sleep 5
-          fi
-          # Also delete orphan tag if present.
-          git push origin ":refs/tags/$TAG" 2>/dev/null || true
-
-      - name: Create tag
-        run: |
-          TAG="whisper-server-${{ inputs.whisper_tag }}${{ inputs.build_suffix }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -f "$TAG" -m "Whisper Server ${{ inputs.whisper_tag }}"
-          git push origin "$TAG" --force
+          BASE="whisper-server-${{ inputs.whisper_tag }}${{ inputs.build_suffix }}"
+          TAG="$BASE"
+          n=1
+          while gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; do
+            if [ "$n" -gt 50 ]; then
+              echo "::error::No free tag after 50 attempts starting at $BASE."
+              exit 1
+            fi
+            TAG="$BASE-r$n"
+            n=$((n + 1))
+          done
+          echo "Publishing as tag: $TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       # ---------------------------------------------------------------------
       # Generate the manifest BEFORE creating the release. GitHub immutable
@@ -494,7 +537,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="whisper-server-${{ inputs.whisper_tag }}${{ inputs.build_suffix }}"
+          TAG="${{ steps.tag.outputs.tag }}"
           bash scripts/generate-whisper-server-manifest.sh \
             "$TAG" "${{ inputs.whisper_tag }}" assets > /tmp/manifest.json
           if [[ "$(jq '.binaries | length' /tmp/manifest.json)" -lt 1 ]]; then
@@ -508,7 +551,7 @@ jobs:
       - name: Create release with assets
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: whisper-server-${{ inputs.whisper_tag }}${{ inputs.build_suffix }}
+          tag_name: ${{ steps.tag.outputs.tag }}
           name: "Whisper Server (${{ inputs.whisper_tag }}) – Vulkan + CPU + Metal + Linux"
           body: |
             Pre-built whisper-server binaries.
