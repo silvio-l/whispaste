@@ -32,13 +32,21 @@ jobs:
   stt-canary:
     name: STT provider canary
     runs-on: ubuntu-latest
+    # The live checks talk to third-party STT APIs; a provider hanging the
+    # connection must not sit until GitHub's 360min default.
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          # Pinned to the same SDK as ci.yml/release.yml. Without this the
+          # canary silently drifts onto whatever `stable` currently is, so a
+          # red run would no longer distinguish "provider API changed" (what
+          # this canary exists to detect) from "Flutter moved on".
+          flutter-version: 3.44.1
           cache: true
 
       - name: Get dependencies

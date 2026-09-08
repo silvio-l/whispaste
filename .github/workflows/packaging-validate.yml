@@ -190,7 +190,20 @@ jobs:
 
       - name: Install validators
         run: |
-          sudo apt-get update
+          # Retried + hard-bounded: run 32296050925 hit an azure.archive.
+          # ubuntu.com mirror that answered every line with `Ign:` and never
+          # returned, so the job sat until GitHub killed it at exactly 6h00m.
+          # A dead mirror is transient and unrelated to the manifests under
+          # test, so retry it — but never wait more than 2min per attempt.
+          for attempt in 1 2 3; do
+            timeout 120 sudo apt-get update && break
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::apt-get update failed after 3 attempts."
+              exit 1
+            fi
+            echo "apt-get update failed (attempt $attempt/3) — retrying in 15s."
+            sleep 15
+          done
           sudo apt-get install -y python3-yaml desktop-file-utils appstream
 
       - name: Validate Flatpak manifest YAML + required finish-args
@@ -359,7 +372,17 @@ jobs:
 
       - name: Install validators
         run: |
-          sudo apt-get update
+          # See the Flatpak job's Install validators step for why this is
+          # retried and timeout-bounded.
+          for attempt in 1 2 3; do
+            timeout 120 sudo apt-get update && break
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::apt-get update failed after 3 attempts."
+              exit 1
+            fi
+            echo "apt-get update failed (attempt $attempt/3) — retrying in 15s."
+            sleep 15
+          done
           sudo apt-get install -y python3-yaml
 
       - name: Validate snapcraft.yaml YAML + required keys + plugs + confinement

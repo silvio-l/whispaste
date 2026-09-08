@@ -23,6 +23,7 @@ jobs:
   format:
     name: Format check (dart format)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
 
@@ -42,6 +43,9 @@ jobs:
   smoke-windows:
     name: Smoke — Windows (dart compile exe)
     runs-on: windows-latest
+    # GitHub-hosted Windows bills at 2x; see the macOS job below for why an
+    # explicit limit matters. Normal runtime is ~3min.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
 
@@ -95,6 +99,11 @@ jobs:
   smoke-macos:
     name: Smoke — macOS (dart compile exe + .app bundle)
     runs-on: macos-latest
+    # GitHub-hosted macOS bills at 10x. Without an explicit limit a hung step
+    # only dies at GitHub's 360min default = 3600 billed minutes, i.e. the
+    # entire monthly free-tier budget from a single stuck run. This job is a
+    # `dart compile exe` smoke test that finishes in ~3min.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
 

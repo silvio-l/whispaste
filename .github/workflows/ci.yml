@@ -21,6 +21,7 @@ jobs:
   secret-scan:
     name: Secret scan
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
       - name: Scan for potential secrets
@@ -305,7 +306,19 @@ jobs:
       # Widget-Tests (`flutter test`) brauchen das nicht, der Build aber schon.
       - name: Install Linux build dependencies
         run: |
-          sudo apt-get update
+          # Retried + hard-bounded: a stalled Ubuntu mirror answered every
+          # line with `Ign:` and never returned in packaging-validate run
+          # 32296050925, burning 6h of runner time. Transient and unrelated
+          # to the code under test, so retry — but cap each attempt at 2min.
+          for attempt in 1 2 3; do
+            timeout 120 sudo apt-get update && break
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::apt-get update failed after 3 attempts."
+              exit 1
+            fi
+            echo "apt-get update failed (attempt $attempt/3) — retrying in 15s."
+            sleep 15
+          done
           sudo apt-get install -y clang cmake ninja-build pkg-config \
             libgtk-3-dev liblzma-dev libsecret-1-dev \
             libkeybinder-3.0-dev libnotify-dev libcurl4-openssl-dev \

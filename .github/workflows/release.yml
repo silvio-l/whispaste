@@ -764,6 +764,33 @@ jobs:
             -MsixPath $msix.FullName
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::submit-ms-store.ps1 failed (exit $LASTEXITCODE)"; exit $LASTEXITCODE }
 
+      # The job-level `continue-on-error: true` above is deliberate (a Store
+      # outage must not block the GitHub Release), but it made a HARD API
+      # rejection indistinguishable from success: the whole run still reports
+      # green, so nobody opens it. That is not theoretical — an
+      # `InvalidParameterValue: 'Base' is not a valid PriceId` rejection
+      # silently failed the Store submission on SIX consecutive releases
+      # (v1.2.67 … v1.2.72) while every run showed green; it was only noticed
+      # and fixed at v1.2.73 (2fee2b52). Keep the job non-blocking, but make
+      # the failure impossible to miss on the run summary page.
+      - name: Surface a failed Store submission on the run summary
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo "## ⚠️ Microsoft Store submission FAILED"
+            echo ""
+            echo "Tag: \`${{ github.ref_name }}\`"
+            echo ""
+            echo "This job is \`continue-on-error\`, so the overall run still"
+            echo "reports success — the GitHub Release and every other channel"
+            echo "published normally. **The Store submission did not.**"
+            echo ""
+            echo "Check the \`Submit to Microsoft Store\` job log above, then"
+            echo "re-submit (see docs/store-release.md). Do not assume the"
+            echo "green run means the Store got this build."
+          } >> "$GITHUB_STEP_SUMMARY"
+
   build-macos:
     name: Build macOS
     runs-on: macos-latest
@@ -1078,7 +1105,19 @@ jobs:
       # -Werror: already removed in linux/CMakeLists.txt (commit 26fab952)
       - name: Install Linux build dependencies
         run: |
-          sudo apt-get update
+          # See ci.yml's Install Linux build dependencies step: a stalled
+          # Ubuntu mirror once ate 6h of runner time. Retry, capped at 2min
+          # per attempt — on a release tag a mirror blip must not cost the
+          # whole build.
+          for attempt in 1 2 3; do
+            timeout 120 sudo apt-get update && break
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::apt-get update failed after 3 attempts."
+              exit 1
+            fi
+            echo "apt-get update failed (attempt $attempt/3) — retrying in 15s."
+            sleep 15
+          done
           sudo apt-get install -y \
             clang cmake ninja-build pkg-config \
             libgtk-3-dev liblzma-dev libsecret-1-dev \

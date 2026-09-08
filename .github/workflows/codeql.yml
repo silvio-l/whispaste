@@ -18,6 +18,7 @@ jobs:
   analyze-javascript:
     name: Analyze JavaScript
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v6
@@ -37,6 +38,10 @@ jobs:
   analyze-cpp:
     name: Analyze C++ (Win32/GDI+)
     runs-on: windows-latest
+    # Billed at 2x, and this job runs a full `flutter build windows` as the
+    # CodeQL autobuild. Without a limit a stuck build burns up to 720 billed
+    # minutes before GitHub's 360min default kills it.
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v6
@@ -94,6 +99,7 @@ jobs:
   analyze-actions:
     name: Analyze GitHub Actions workflows
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v6

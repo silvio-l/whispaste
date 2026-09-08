@@ -13,6 +13,7 @@ permissions:
 jobs:
   trigger:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Dispatch deploy-pages
         run: gh workflow run deploy-pages.yml --ref main --repo "$GITHUB_REPOSITORY"
