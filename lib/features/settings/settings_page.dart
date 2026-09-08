@@ -11,6 +11,7 @@ import '../../core/l10n/generated/app_localizations.dart';
 import '../../core/navigation/page_state.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/tokens.dart';
+import '../../services/deploy_channel_service.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/page_shell.dart';
 import 'search/settings_search_provider.dart';
@@ -148,6 +149,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         (s) => s.value?.onboarding.onboardingCompleted ?? false,
       ),
     );
+
+    final deployChannel = ref.watch(deployChannelProvider);
 
     /// One settings section, on the app's card material, plus the transient
     /// locator ring a search hit paints over it.
@@ -331,10 +334,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     // FloatingButtonSection.build() returns SizedBox.shrink(), but
     // sectionCard() still wraps it in a padded, bordered card, leaving a
     // bare empty outline. Drop the whole card on unsupported platforms
-    // instead.
+    // instead. Same reasoning for the Updates section on store /
+    // package-managed builds, where UpdatesSection.build() also returns
+    // SizedBox.shrink() (see its own isExternallyManaged check).
     final visibleSections = allSections.where((s) {
       if (s.$1 == 'floatingButton' &&
           !FloatingButtonSection.isSupportedPlatform) {
+        return false;
+      }
+      if (s.$1 == 'updates' && isExternallyManaged(deployChannel)) {
         return false;
       }
       return matchSet == null || matchSet.contains(s.$1);

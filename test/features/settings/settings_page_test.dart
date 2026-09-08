@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:whispaste/core/l10n/generated/app_localizations.dart';
 import 'package:whispaste/features/settings/sections/overlay_button_section.dart';
+import 'package:whispaste/features/settings/sections/updates_section.dart';
 import 'package:whispaste/features/settings/settings_page.dart';
 import 'package:whispaste/features/settings/widgets/settings_search_field.dart';
+import 'package:whispaste/services/deploy_channel_service.dart';
 import 'package:whispaste/widgets/page_shell.dart';
 
 import '../../fixtures/test_helpers.dart';
@@ -174,6 +176,47 @@ void main() {
         expect(find.byType(FloatingButtonSection), findsOneWidget);
 
         debugDefaultTargetPlatformOverride = null;
+      });
+    });
+
+    group('Updates section — deploy-channel gating', () {
+      // Regression test: UpdatesSection.build() returns SizedBox.shrink()
+      // for a store/package-managed install, but `sectionCard()` used to
+      // still wrap that empty child in a padded, bordered container — a
+      // visible empty box between "Advanced" and "Onboarding review" with
+      // no title (the reported bug). The whole card must be dropped, not
+      // just its content.
+      testWidgets('is entirely absent on the store deploy channel, not just an '
+          'empty card', (tester) async {
+        await tester.pumpWidget(
+          makeTestable(
+            const SettingsPage(),
+            locale: const Locale('en'),
+            overrides: [
+              deployChannelProvider.overrideWith((ref) => DeployChannel.store),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byType(UpdatesSection), findsNothing);
+      });
+
+      testWidgets('is present on the portable deploy channel', (tester) async {
+        await tester.pumpWidget(
+          makeTestable(
+            const SettingsPage(),
+            locale: const Locale('en'),
+            overrides: [
+              deployChannelProvider.overrideWith(
+                (ref) => DeployChannel.portable,
+              ),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byType(UpdatesSection), findsOneWidget);
       });
     });
   });
