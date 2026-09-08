@@ -301,10 +301,10 @@ describe("PKG_MANAGERS config invariants", () => {
     expect(winget!.live).toBe(false);
   });
 
-  it("homebrew is NOT live (behind live-guard — not yet published)", () => {
+  it("homebrew is live (published since v1.2.75, Developer-ID notarization)", () => {
     const homebrew = PKG_MANAGERS.find((m) => m.id === "homebrew");
     expect(homebrew, "homebrew channel must exist").toBeDefined();
-    expect(homebrew!.live).toBe(false);
+    expect(homebrew!.live).toBe(true);
   });
 
   it("aur, flathub, snap are Linux stubs, not live", () => {
@@ -389,9 +389,9 @@ describe("getLivePkgManagers", () => {
     expect(ids).not.toContain("winget");
   });
 
-  it("does NOT include homebrew (not yet published)", () => {
+  it("includes homebrew (live since v1.2.75)", () => {
     const ids = getLivePkgManagers().map((m) => m.id);
-    expect(ids).not.toContain("homebrew");
+    expect(ids).toContain("homebrew");
   });
 
   it("includes scoop (live)", () => {

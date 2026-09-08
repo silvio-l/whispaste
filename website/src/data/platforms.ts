@@ -266,9 +266,11 @@ export const PKG_MANAGERS: PkgManagerChannel[] = [
   {
     id: 'homebrew',
     name: 'Homebrew',
-    live: false,
+    live: true,
     platform: 'macos',
-    commands: ['brew install --cask whispaste'],
+    commands: [
+      'brew install --cask whispaste/tap/whispaste',
+    ],
     comment: { de: '# macOS · Homebrew', en: '# macOS · Homebrew' },
     managerInstallUrl: 'https://brew.sh',
   },
