@@ -46,7 +46,7 @@
     "vite": "8.1.5",
     "esbuild": "^0.28.1",
     "@opentelemetry/core": "^2.8.0",
-    "svgo": "^4.0.2",
+    "svgo": "^4.1.0",
     "sharp": "^0.35.0",
     "js-yaml": "^4.3.1",
     "postcss": "^8.5.18",
