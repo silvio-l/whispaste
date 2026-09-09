@@ -36,6 +36,7 @@ class HistoryNotesSectionState extends ConsumerState<HistoryNotesSection> {
   final _controller = TextEditingController();
   final _editController = TextEditingController();
   final _addKeyboardFocusNode = FocusNode();
+  final _headerFocusNode = FocusNode(debugLabel: 'HistoryNotesHeader');
   bool _isAdding = false;
   String? _editingNoteId;
 
@@ -46,6 +47,7 @@ class HistoryNotesSectionState extends ConsumerState<HistoryNotesSection> {
 
   @override
   void dispose() {
+    _headerFocusNode.dispose();
     _controller.dispose();
     _editController.dispose();
     _addKeyboardFocusNode.dispose();
@@ -153,43 +155,61 @@ class HistoryNotesSectionState extends ConsumerState<HistoryNotesSection> {
             Row(
               children: [
                 Expanded(
-                  child: Semantics(
-                    button: !_isAdding,
-                    label: l10n.historyAddNote,
-                    child: GestureDetector(
-                      onTap: _isAdding
-                          ? null
-                          : () => setState(() => _isAdding = true),
-                      behavior: HitTestBehavior.opaque,
-                      child: Row(
-                        children: [
-                          // `textSecondary`, not the accent — same correction as the
-                          // tag section's glyph directly above it (Ticket 32, B3):
-                          // the section label is inert, and the two controls that
-                          // *are* operable (microphone, "+") sit on the same line and
-                          // keep the accent to themselves.
-                          const Icon(
-                            LucideIcons.stickyNote,
-                            size: WpIconSize.sm,
-                            color: textSecondary,
-                          ),
-                          const SizedBox(width: WpSpacing.xs),
-                          Flexible(
-                            child: Text(
-                              noteList.isEmpty
-                                  ? l10n.historyAddNote
-                                  : '${l10n.historyNotes} (${noteList.length})',
-                              style: const TextStyle(
-                                fontSize: WpTypography.body,
-                                fontWeight: FontWeight.w600,
-                                color: textSecondary,
-                                letterSpacing: 0.3,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                  // loam-ignore: a11y-interactive-semantics – merged via outer MergeSemantics
+                  child: MergeSemantics(
+                    child: Semantics(
+                      button: !_isAdding,
+                      label: l10n.historyAddNote,
+                      child: WpFocusRing(
+                        focusNode: _headerFocusNode,
+                        radius: WpRadius.sm,
+                        child: InkWell(
+                          focusNode: _headerFocusNode,
+                          onTap: _isAdding
+                              ? null
+                              : () => setState(() => _isAdding = true),
+                          borderRadius: WpRadius.borderSm,
+                          focusColor: Colors.transparent,
+                          hoverColor: Colors.transparent,
+                          splashColor: Colors.transparent,
+                          highlightColor: Colors.transparent,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: WpSpacing.xxs,
+                              horizontal: WpSpacing.xxs,
+                            ),
+                            child: Row(
+                              children: [
+                                // `textSecondary`, not the accent — same correction as the
+                                // tag section's glyph directly above it (Ticket 32, B3):
+                                // the section label is inert, and the two controls that
+                                // *are* operable (microphone, "+") sit on the same line and
+                                // keep the accent to themselves.
+                                const Icon(
+                                  LucideIcons.stickyNote,
+                                  size: WpIconSize.sm,
+                                  color: textSecondary,
+                                ),
+                                const SizedBox(width: WpSpacing.xs),
+                                Flexible(
+                                  child: Text(
+                                    noteList.isEmpty
+                                        ? l10n.historyAddNote
+                                        : '${l10n.historyNotes} (${noteList.length})',
+                                    style: const TextStyle(
+                                      fontSize: WpTypography.body,
+                                      fontWeight: FontWeight.w600,
+                                      color: textSecondary,
+                                      letterSpacing: 0.3,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
